@@ -1,0 +1,23 @@
+{
+  "name": "AI 加工厂",
+  "short_name": "AI 加工厂",
+  "description": "把产品想法加工成需求、原型、开发任务和验收成果。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#4E5969",
+  "icons": [
+    {
+      "src": "./pwa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

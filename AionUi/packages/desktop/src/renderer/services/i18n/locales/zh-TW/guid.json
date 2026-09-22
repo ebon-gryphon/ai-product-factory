@@ -1,0 +1,43 @@
+{
+  "promptExamplesHint": "試試這些指令",
+  "defaultPrompts": {
+    "understand": "了解一下這個專案，用白話告訴我它是做什麼的、從哪裡入手",
+    "cleanup": "幫我找出這個資料夾裡重複和沒用的檔案，列出來讓我確認",
+    "create": "幫我做一個精美的個人主頁網頁，做好後直接打開給我看"
+  },
+  "selectAssistantHint": "選擇一位助手開始任務",
+  "workspace": {
+    "workInProject": "在專案中工作",
+    "optional": "可選",
+    "clearWorkspace": "清除",
+    "specifyWorkspace": "選擇專案資料夾",
+    "searchPlaceholder": "搜尋專案…",
+    "noProject": "不使用專案"
+  },
+  "factory": {
+    "eyebrow": "AI FACTORY · FROM IDEA TO PRODUCT",
+    "title": "Build your product idea.",
+    "subtitle": "Define the product, design a prototype, plan development and verify delivery.",
+    "hint": "Choose a stage, add your product brief and project materials, then send it to an assistant.",
+    "requirements": {
+      "title": "Define product",
+      "description": "Identify users, key scenarios and MVP scope",
+      "prompt": "Act as my product manager. Clarify users, problems, scenarios, alternatives and constraints from my materials. Ask about missing information. Deliver an MVP brief with positioning, user journeys, prioritized features, exclusions, page inventory and testable acceptance criteria. Separate assumptions from facts and do not invent research.\n\nProduct idea:\nUsers:\nMaterials and constraints: "
+    },
+    "content": {
+      "title": "Design prototype",
+      "description": "Map pages, flows and interaction states",
+      "prompt": "Act as my product designer. Based on approved requirements, define information architecture, pages and user flows, then create a reviewable interactive prototype. Cover empty, loading, error and success states and responsive layouts. If project tools permit, create a runnable prototype and explain how to preview it. Clearly label mock data and unconnected services.\n\nApproved requirements:\nVisual preferences:\nProject and constraints: "
+    },
+    "research": {
+      "title": "Plan development",
+      "description": "Turn the brief into executable tasks",
+      "prompt": "Act as my technical lead. Inspect the actual project, requirements and prototype before proposing architecture, data models, API contracts, implementation tasks, dependency order, risks and acceptance checks. Distinguish existing features from planned work. Flag code you could not inspect and state assumptions behind estimates.\n\nRequirements and prototype:\nProject materials:\nRelease constraints: "
+    },
+    "review": {
+      "title": "Verify delivery",
+      "description": "Check features, defects and release readiness",
+      "prompt": "Act as my acceptance reviewer. Compare the implementation to requirements and mark each criterion passed, failed or unverified with evidence. Check core flows, invalid input, empty states, permissions, persistence and screen sizes where runnable. Deliver prioritized defects, fixes, deliverables and release prerequisites. Never claim unexecuted tests passed or treat a mock prototype as a finished feature.\n\nAcceptance criteria:\nCurrent deliverable:\nRun and test instructions: "
+    }
+  }
+}

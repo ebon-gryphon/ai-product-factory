@@ -1,0 +1,16 @@
+.DS_Store
+node_modules/
+target/
+.env
+.env.*
+!.env.example
+*.log
+.vite/
+out/
+coverage/
+test-results/
+playwright-report/
+
+# Upstream promotional media is retained locally, not required by the app.
+/AionUi/resources/*.gif
+/AionUi/resources/*.mp4

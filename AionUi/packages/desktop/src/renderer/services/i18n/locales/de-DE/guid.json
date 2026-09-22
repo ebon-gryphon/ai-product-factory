@@ -1,0 +1,61 @@
+{
+  "agentFallbackNotice": "{{original}} ist nicht verfügbar, stattdessen wird {{fallback}} verwendet.",
+  "noAgentAvailable": "Kein Hauptagent verfügbar. Bitte bei Google anmelden oder Claude/Codex CLI installieren. Zu den Einstellungen?",
+  "noAgentAvailableShort": "Kein Hauptagent verfügbar. Zum Konfigurieren klicken.",
+  "agentTabAutoSwitch": "Modell nicht kompatibel mit Gemini, automatisch zu {{fallback}} gewechselt",
+  "autoSwitchToAgent": "Gemini ist nicht konfiguriert, automatischer Wechsel zu {{agent}}",
+  "autoSwitchedAgent": "{{from}} ist nicht verfügbar, zu {{to}} gewechselt",
+  "promptExamplesHint": "Diese Anweisungen ausprobieren",
+  "defaultPrompts": {
+    "understand": "Verschaffe dir einen Überblick über dieses Projekt und erkläre mir in einfachen Worten, was es macht und wo ich anfangen sollte",
+    "cleanup": "Finde doppelte und unnötige Dateien in diesem Ordner und liste sie zur Bestätigung auf",
+    "create": "Erstelle mir eine schöne persönliche Homepage und öffne sie, sobald sie fertig ist"
+  },
+  "selectAssistantHint": "Wähle einen Assistenten, um eine Aufgabe zu starten",
+  "agentSwitcherLabel": "Agent",
+  "switchedToAgent": "Zu {{agent}} gewechselt",
+  "workspace": {
+    "workInProject": "In einem Projekt arbeiten",
+    "optional": "Optional",
+    "clearWorkspace": "Löschen",
+    "specifyWorkspace": "Projektordner wählen",
+    "searchPlaceholder": "Projekte suchen…",
+    "noProject": "Kein Projekt"
+  },
+  "scanning": {
+    "initialMessage": "Aktueller Agent nicht verfügbar, andere verfügbare Agenten werden gesucht...",
+    "scanningMessage": "Lokale verfügbare Agenten werden gescannt...",
+    "connectingMessage": "Verbindung erfolgreich, bitte warten...",
+    "establishingConnection": "Verbindung wird hergestellt...",
+    "statusQueued": "In der Warteschlange",
+    "statusTesting": "Latenz wird gemessen...",
+    "statusUnreachable": "Nicht erreichbar",
+    "statusAvailable": "Verfügbar"
+  },
+  "factory": {
+    "eyebrow": "AI FACTORY · FROM IDEA TO PRODUCT",
+    "title": "Build your product idea.",
+    "subtitle": "Define the product, design a prototype, plan development and verify delivery.",
+    "hint": "Choose a stage, add your product brief and project materials, then send it to an assistant.",
+    "requirements": {
+      "title": "Define product",
+      "description": "Identify users, key scenarios and MVP scope",
+      "prompt": "Act as my product manager. Clarify users, problems, scenarios, alternatives and constraints from my materials. Ask about missing information. Deliver an MVP brief with positioning, user journeys, prioritized features, exclusions, page inventory and testable acceptance criteria. Separate assumptions from facts and do not invent research.\n\nProduct idea:\nUsers:\nMaterials and constraints: "
+    },
+    "content": {
+      "title": "Design prototype",
+      "description": "Map pages, flows and interaction states",
+      "prompt": "Act as my product designer. Based on approved requirements, define information architecture, pages and user flows, then create a reviewable interactive prototype. Cover empty, loading, error and success states and responsive layouts. If project tools permit, create a runnable prototype and explain how to preview it. Clearly label mock data and unconnected services.\n\nApproved requirements:\nVisual preferences:\nProject and constraints: "
+    },
+    "research": {
+      "title": "Plan development",
+      "description": "Turn the brief into executable tasks",
+      "prompt": "Act as my technical lead. Inspect the actual project, requirements and prototype before proposing architecture, data models, API contracts, implementation tasks, dependency order, risks and acceptance checks. Distinguish existing features from planned work. Flag code you could not inspect and state assumptions behind estimates.\n\nRequirements and prototype:\nProject materials:\nRelease constraints: "
+    },
+    "review": {
+      "title": "Verify delivery",
+      "description": "Check features, defects and release readiness",
+      "prompt": "Act as my acceptance reviewer. Compare the implementation to requirements and mark each criterion passed, failed or unverified with evidence. Check core flows, invalid input, empty states, permissions, persistence and screen sizes where runnable. Deliver prioritized defects, fixes, deliverables and release prerequisites. Never claim unexecuted tests passed or treat a mock prototype as a finished feature.\n\nAcceptance criteria:\nCurrent deliverable:\nRun and test instructions: "
+    }
+  }
+}
