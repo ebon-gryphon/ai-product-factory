@@ -25,7 +25,7 @@ describe('release packaging configuration', () => {
   it('uses the factory display name and executable name', () => {
     const config = readProjectFile('packages/desktop/electron-builder.yml');
 
-    expect(config).toContain('productName: AI 加工厂');
+    expect(config).toContain('productName: AI产品加工厂');
     expect(config).toContain('executableName: AIFactory');
   });
 

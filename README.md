@@ -1,4 +1,15 @@
-# AI 加工厂
+# AI产品加工厂
+
+<p>
+  <a href="https://github.com/ebon-gryphon/ai-product-factory/blob/main/docs/demo.html">
+    <img src="AionUi/public/pwa/icon-192.png" width="64" height="64" align="middle" alt="AI产品加工厂图标" />
+    <strong>体验 Demo · 下载独立 HTML</strong>
+  </a>
+</p>
+
+打开上方链接，在 GitHub 文件页点击 **Download raw file（下载原始文件）**，下载后双击 `demo.html` 即可体验。图标、样式和脚本全部内置，无需安装、启动服务或联网。仓库目前为私有，需要有仓库访问权限。
+
+Demo 支持四个工序的任务选择、草稿编辑和清空；不连接 AI 服务，不会自动生成产品。
 
 把产品想法加工成需求、原型、开发任务和验收成果。面向个人和小团队的 AI 产品制作工作台。
 
@@ -28,11 +39,12 @@ bun install --ignore-scripts
 
 ## 查看界面
 
-在本目录下运行以下命令，然后打开 http://127.0.0.1:5188。
+直接下载上方的 [HTML Demo](docs/demo.html)，用浏览器打开即可。
+
+开发者如需重新生成 HTML，在安装前端依赖后执行：
 
 ```sh
-cd AionUi
-./node_modules/.bin/vite --config ../docs/preview/vite.config.mjs
+node docs/preview/build-demo.mjs
 ```
 
 预览复用正式工序组件，支持选择工序、编辑和清空草稿，不连接 AI 服务。截图见 [首页预览](docs/factory-preview.png)。

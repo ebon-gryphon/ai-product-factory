@@ -5,7 +5,7 @@
  */
 
 /** The customer-facing name shown throughout the desktop app and WebUI. */
-export const APP_DISPLAY_NAME = 'AI 加工厂';
+export const APP_DISPLAY_NAME = 'AI产品加工厂';
 
 /** Compact mark used where the full product name does not fit. */
 export const APP_MONOGRAM = 'AI';

@@ -16,7 +16,7 @@ function Preview() {
   return <div style={{minHeight:'100vh',background:'var(--color-fill-1)',color:'var(--color-text-1)',fontFamily:'system-ui,sans-serif'}}>
     <nav style={{padding:'20px 32px',borderBottom:'1px solid var(--color-border-2)',display:'flex',alignItems:'center',gap:12}}>
       <img src={brandIcon} width='36' height='36' alt='' />
-      <strong>AI 加工厂</strong><span style={{marginLeft:'auto',color:'var(--color-text-3)'}}>首页交互预览 · AI 服务未连接</span>
+      <strong>AI产品加工厂</strong><span style={{marginLeft:'auto',color:'var(--color-text-3)'}}>首页交互预览 · AI 服务未连接</span>
     </nav>
     <main style={{maxWidth:900,margin:'0 auto',padding:'64px 24px'}}>
       <header className={styles.factoryHeader}><span className={styles.factoryEyebrow}>{guid.factory.eyebrow}</span><h1>{guid.factory.title}</h1><p>{guid.factory.subtitle}</p></header>
