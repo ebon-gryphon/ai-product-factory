@@ -43,3 +43,6 @@ pub use system_settings::SystemSettings;
 pub use team::{MailboxMessageRow, TeamRow, TeamTaskRow};
 pub use user::{ExternalUserProjection, User, UserStatus, UserType};
 pub use user_order::{OrderItemType, OrderScene, UserOrderRow};
+
+mod factory;
+pub use factory::FactoryRecord;

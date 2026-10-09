@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import { Button, Tooltip } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
-import { Experiment } from '@icon-park/react';
+import { Experiment, FactoryBuilding } from '@icon-park/react';
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { usePreviewContext } from '@renderer/pages/conversation/Preview/context/PreviewContext';
@@ -212,6 +212,18 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
               siderTooltipProps={siderTooltipProps}
               onClick={handleAssistantClick}
             />
+            <Button
+              icon={<FactoryBuilding size={18} />}
+              type={pathname === '/factory' ? 'secondary' : 'text'}
+              className='w-full min-h-34px text-t-primary'
+              aria-label={t('guid.production.title')}
+              onClick={() => {
+                void navigate('/factory');
+                onSessionClick?.();
+              }}
+            >
+              {!collapsed && t('guid.production.title')}
+            </Button>
             {/* Scheduled tasks nav entry - fixed above scroll */}
             <Tooltip content={t('common.modelBench.title')} position='right'>
               <Button

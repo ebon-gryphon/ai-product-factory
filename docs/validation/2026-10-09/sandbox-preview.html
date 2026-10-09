@@ -1,0 +1,1197 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>真实生成原型 · 隔离预览验证</title><style>iframe{width:100%;height:900px;border:1px solid #ccc}body{font-family:system-ui;margin:16px}</style><h1>生产项目隔离预览验证</h1><p>复用应用的 allow-scripts allow-forms 沙箱和 CSP，验证真实生成原型在存储不可用时仍可操作。</p><h2>mimo</h2><iframe title="mimo" sandbox="allow-scripts allow-forms" srcdoc="&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27;; style-src &#x27;unsafe-inline&#x27;; img-src data:; font-src data:; connect-src &#x27;none&#x27;; form-action &#x27;none&#x27;; base-uri &#x27;none&#x27;&quot;&gt;&lt;!DOCTYPE html&gt;
+&lt;!-- ============================================================
+  中文个人待办清单 MVP — 交互原型（工序 2，单文件、无外部依赖）
+  对应需求：01_MVP需求文档.md（P0 全部实现，P1 实现数量统计）
+
+  状态演示说明：
+  - 加载状态：打开页面显示约 400ms「正在加载任务…」（模拟异步读取；真实读取为同步 localStorage）。
+  - 空状态：无任务或筛选结果为空时，按「全部/未完成/已完成」显示对应文案。
+  - 错误状态：localStorage 被禁用/抛异常，或点击「模拟存储故障」时，回退内存模式并显示警告横幅。
+
+  模拟数据：首次打开载入 3 条虚构示例任务（买牛奶 / 写说明 / 散步），可一键清空或重置。
+  未连接的服务：无后端接口、无账号体系、无云同步、无任何网络请求——数据仅存本机浏览器。
+
+  安全要求：用户输入一律经 textContent / setAttribute 安全赋值渲染，全文件不使用 innerHTML。
+============================================================ --&gt;
+&lt;html lang=&quot;zh-CN&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;title&gt;我的待办 — 个人待办清单 MVP 原型&lt;/title&gt;
+&lt;style&gt;
+  :root {
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --ink: #1f2430;
+    --muted: #6b7280;
+    --line: #e5e8f0;
+    --primary: #2f6bed;
+    --primary-dark: #1f4fc0;
+    --danger: #d64545;
+    --warn-bg: #fff6e5;
+    --warn-ink: #8a5a00;
+    --warn-line: #f0d089;
+    --info-bg: #e8f1ff;
+    --info-ink: #1f4a9c;
+    --info-line: #b9d2ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, &quot;PingFang SC&quot;, &quot;Hiragino Sans GB&quot;, &quot;Microsoft YaHei&quot;, &quot;Noto Sans CJK SC&quot;, sans-serif;
+    line-height: 1.6;
+  }
+  .app { max-width: 560px; margin: 0 auto; padding: 24px 16px 48px; }
+  header h1 { font-size: 26px; margin: 0 0 4px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+
+  .banner {
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 13px;
+    margin-bottom: 12px;
+    border: 1px solid transparent;
+  }
+  .banner[hidden] { display: none; }
+  .banner--info { background: var(--info-bg); color: var(--info-ink); border-color: var(--info-line); }
+  .banner--warn { background: var(--warn-bg); color: var(--warn-ink); border-color: var(--warn-line); }
+
+  .storage-line { font-size: 12px; color: var(--muted); margin: 0 0 14px; }
+  .storage-line .ok { color: #217a3d; }
+  .storage-line .bad { color: var(--danger); font-weight: 600; }
+
+  .composer { display: flex; gap: 8px; margin-bottom: 6px; }
+  .composer input[type=&quot;text&quot;] {
+    flex: 1; min-width: 0; font-size: 16px; padding: 12px 14px;
+    border: 1px solid var(--line); border-radius: 10px;
+    background: var(--card); color: var(--ink); outline: none;
+  }
+  .composer input[type=&quot;text&quot;]:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(47,107,237,.15); }
+  .composer button {
+    font-size: 16px; padding: 12px 20px; border: none; border-radius: 10px;
+    background: var(--primary); color: #fff; cursor: pointer;
+  }
+  .composer button:hover { background: var(--primary-dark); }
+  .composer button:active { transform: translateY(1px); }
+
+  .input-error { color: var(--danger); font-size: 13px; margin: 4px 0 0; }
+  .input-error[hidden] { display: none; }
+
+  .filters { display: flex; gap: 8px; margin: 16px 0 8px; }
+  .filter-btn {
+    flex: 1; min-height: 40px; font-size: 14px;
+    border: 1px solid var(--line); border-radius: 10px;
+    background: var(--card); color: var(--muted); cursor: pointer;
+  }
+  .filter-btn.is-active { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
+
+  .stats { color: var(--muted); font-size: 13px; margin: 0 0 10px; min-height: 20px; }
+
+  .list-area {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 8px; min-height: 140px;
+  }
+  .loading { text-align: center; color: var(--muted); font-size: 14px; padding: 36px 0; margin: 0; }
+  .loading[hidden] { display: none; }
+
+  .task-list { list-style: none; margin: 0; padding: 0; }
+  .task-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 8px; border-bottom: 1px solid var(--line);
+  }
+  .task-item:last-child { border-bottom: none; }
+  .task-item input[type=&quot;checkbox&quot;] { width: 20px; height: 20px; flex: none; accent-color: var(--primary); cursor: pointer; }
+  .task-text { flex: 1; min-width: 0; font-size: 15px; word-break: break-word; }
+  .task-item.is-done .task-text { text-decoration: line-through; color: var(--muted); }
+  .del-btn {
+    flex: none; min-height: 36px; padding: 6px 12px; font-size: 13px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: #fff; color: var(--danger); cursor: pointer;
+  }
+  .del-btn:hover { background: #fdf0f0; border-color: #f3c2c2; }
+
+  .empty { text-align: center; color: var(--muted); font-size: 14px; padding: 36px 12px; }
+  .empty[hidden] { display: none; }
+  .empty strong { display: block; color: var(--ink); font-size: 15px; margin-bottom: 4px; }
+
+  .demo-panel {
+    margin-top: 24px; border: 1px dashed #c9cfdd;
+    border-radius: 12px; padding: 14px; background: #fbfcfe;
+  }
+  .demo-panel h2 { font-size: 14px; margin: 0 0 10px; }
+  .demo-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .demo-btns button {
+    font-size: 13px; min-height: 36px; padding: 6px 12px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: #fff; color: var(--ink); cursor: pointer;
+  }
+  .demo-btns button:hover { border-color: var(--primary); color: var(--primary); }
+  .demo-note { font-size: 12px; color: var(--muted); margin: 10px 0 0; }
+
+  footer.note { font-size: 12px; color: var(--muted); margin-top: 16px; text-align: center; }
+
+  @media (max-width: 480px) {
+    .app { padding: 16px 12px 40px; }
+    header h1 { font-size: 22px; }
+    .composer button { padding: 12px 16px; }
+    .del-btn { padding: 8px 10px; }
+  }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class=&quot;app&quot;&gt;
+  &lt;header&gt;
+    &lt;h1&gt;我的待办&lt;/h1&gt;
+    &lt;p class=&quot;subtitle&quot;&gt;个人待办清单 MVP 交互原型 · 单文件 · 无账号 · 无后端&lt;/p&gt;
+  &lt;/header&gt;
+
+  &lt;div id=&quot;banner&quot; class=&quot;banner&quot; role=&quot;status&quot; aria-live=&quot;polite&quot; hidden&gt;&lt;/div&gt;
+
+  &lt;p id=&quot;storageLine&quot; class=&quot;storage-line&quot;&gt;存储状态：检测中…&lt;/p&gt;
+
+  &lt;section class=&quot;composer&quot; aria-label=&quot;添加任务&quot;&gt;
+    &lt;input id=&quot;taskInput&quot; type=&quot;text&quot; placeholder=&quot;想做点什么？例如：买牛奶&quot; maxlength=&quot;120&quot; autocomplete=&quot;off&quot; aria-label=&quot;任务内容&quot;&gt;
+    &lt;button id=&quot;addBtn&quot; type=&quot;button&quot;&gt;添加&lt;/button&gt;
+  &lt;/section&gt;
+  &lt;p id=&quot;inputError&quot; class=&quot;input-error&quot; role=&quot;alert&quot; hidden&gt;&lt;/p&gt;
+
+  &lt;nav class=&quot;filters&quot; aria-label=&quot;任务筛选&quot;&gt;
+    &lt;button type=&quot;button&quot; class=&quot;filter-btn is-active&quot; data-filter=&quot;all&quot; aria-pressed=&quot;true&quot;&gt;全部&lt;/button&gt;
+    &lt;button type=&quot;button&quot; class=&quot;filter-btn&quot; data-filter=&quot;active&quot; aria-pressed=&quot;false&quot;&gt;未完成&lt;/button&gt;
+    &lt;button type=&quot;button&quot; class=&quot;filter-btn&quot; data-filter=&quot;done&quot; aria-pressed=&quot;false&quot;&gt;已完成&lt;/button&gt;
+  &lt;/nav&gt;
+
+  &lt;p id=&quot;stats&quot; class=&quot;stats&quot;&gt;&lt;/p&gt;
+
+  &lt;section id=&quot;listArea&quot; class=&quot;list-area&quot; aria-busy=&quot;true&quot;&gt;
+    &lt;p id=&quot;loadingState&quot; class=&quot;loading&quot;&gt;正在加载任务…&lt;/p&gt;
+    &lt;ul id=&quot;taskList&quot; class=&quot;task-list&quot;&gt;&lt;/ul&gt;
+    &lt;div id=&quot;emptyState&quot; class=&quot;empty&quot; hidden&gt;
+      &lt;strong id=&quot;emptyTitle&quot;&gt;&lt;/strong&gt;
+      &lt;span id=&quot;emptyText&quot;&gt;&lt;/span&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;section class=&quot;demo-panel&quot; aria-label=&quot;原型演示控制&quot;&gt;
+    &lt;h2&gt;原型演示控制（仅用于演示各种状态）&lt;/h2&gt;
+    &lt;div class=&quot;demo-btns&quot;&gt;
+      &lt;button id=&quot;simFailBtn&quot; type=&quot;button&quot;&gt;模拟存储故障&lt;/button&gt;
+      &lt;button id=&quot;recoverBtn&quot; type=&quot;button&quot;&gt;恢复存储并写回&lt;/button&gt;
+      &lt;button id=&quot;seedBtn&quot; type=&quot;button&quot;&gt;重置为示例数据&lt;/button&gt;
+      &lt;button id=&quot;clearAllBtn&quot; type=&quot;button&quot;&gt;清空全部任务&lt;/button&gt;
+    &lt;/div&gt;
+    &lt;p class=&quot;demo-note&quot;&gt;模拟数据：首次打开的 3 条任务为虚构演示内容。未连接的服务：本原型没有后端接口、账号体系与云同步，所有数据仅保存在本机浏览器 localStorage；该存储不可用时自动回退为内存模式（刷新即丢失）。任务文本上限 120 字（回应需求待确认项，默认限制长度）。&lt;/p&gt;
+  &lt;/section&gt;
+
+  &lt;footer class=&quot;note&quot;&gt;开发工序交付物 · 对应需求文档 01_MVP需求文档.md · 无任何外部依赖，可离线打开&lt;/footer&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+(function () {
+  &#x27;use strict&#x27;;
+
+  var STORAGE_KEY = &#x27;todo-mvp-tasks-v1&#x27;;
+  var FILTER_KEY = &#x27;todo-mvp-filter-v1&#x27;;
+  var LOAD_DELAY_MS = 400; // 原型演示用：模拟一次异步加载过程
+
+  var state = {
+    tasks: [],
+    filter: &#x27;all&#x27;,
+    storageOk: true,
+    simulateFailure: false,
+    loading: true
+  };
+
+  var el = {
+    banner: document.getElementById(&#x27;banner&#x27;),
+    storageLine: document.getElementById(&#x27;storageLine&#x27;),
+    taskInput: document.getElementById(&#x27;taskInput&#x27;),
+    addBtn: document.getElementById(&#x27;addBtn&#x27;),
+    inputError: document.getElementById(&#x27;inputError&#x27;),
+    stats: document.getElementById(&#x27;stats&#x27;),
+    listArea: document.getElementById(&#x27;listArea&#x27;),
+    loadingState: document.getElementById(&#x27;loadingState&#x27;),
+    taskList: document.getElementById(&#x27;taskList&#x27;),
+    emptyState: document.getElementById(&#x27;emptyState&#x27;),
+    emptyTitle: document.getElementById(&#x27;emptyTitle&#x27;),
+    emptyText: document.getElementById(&#x27;emptyText&#x27;),
+    simFailBtn: document.getElementById(&#x27;simFailBtn&#x27;),
+    recoverBtn: document.getElementById(&#x27;recoverBtn&#x27;),
+    seedBtn: document.getElementById(&#x27;seedBtn&#x27;),
+    clearAllBtn: document.getElementById(&#x27;clearAllBtn&#x27;)
+  };
+
+  var filterBtns = document.querySelectorAll(&#x27;.filter-btn&#x27;);
+
+  // ---------- 工具 ----------
+  function genId() {
+    return &#x27;t-&#x27; + Date.now().toString(36) + &#x27;-&#x27; + Math.random().toString(36).slice(2, 8);
+  }
+
+  function seedTasks() {
+    // 公开虚构演示内容
+    return [
+      { id: genId(), text: &#x27;买牛奶和全麦面包&#x27;, done: false, createdAt: Date.now() },
+      { id: genId(), text: &#x27;给演示项目写一页说明&#x27;, done: false, createdAt: Date.now() },
+      { id: genId(), text: &#x27;晚饭后散步 30 分钟&#x27;, done: true, createdAt: Date.now() }
+    ];
+  }
+
+  function sanitizeTask(raw) {
+    if (!raw || typeof raw !== &#x27;object&#x27;) return null;
+    if (typeof raw.text !== &#x27;string&#x27;) return null;
+    var text = raw.text.trim().slice(0, 120);
+    if (!text) return null;
+    return {
+      id: typeof raw.id === &#x27;string&#x27; ? raw.id : genId(),
+      text: text,
+      done: !!raw.done,
+      createdAt: typeof raw.createdAt === &#x27;number&#x27; ? raw.createdAt : Date.now()
+    };
+  }
+
+  // ---------- 存储层：异常一律捕获，回退内存 ----------
+  function probeLocalStorage() {
+    try {
+      var k = &#x27;__todo_probe__&#x27;;
+      window.localStorage.setItem(k, &#x27;1&#x27;);
+      window.localStorage.removeItem(k);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function readRaw() {
+    if (state.simulateFailure) throw new Error(&#x27;已开启模拟存储故障&#x27;);
+    if (!probeLocalStorage()) throw new Error(&#x27;localStorage 不可用（沙箱或隐私模式禁止存储）&#x27;);
+    return window.localStorage.getItem(STORAGE_KEY); // null = 首次运行
+  }
+
+  function writeRaw(json) {
+    if (state.simulateFailure) throw new Error(&#x27;已开启模拟存储故障&#x27;);
+    if (!probeLocalStorage()) throw new Error(&#x27;localStorage 不可用（沙箱或隐私模式禁止存储）&#x27;);
+    window.localStorage.setItem(STORAGE_KEY, json);
+  }
+
+  function save() {
+    try {
+      writeRaw(JSON.stringify(state.tasks));
+      state.storageOk = true;
+      renderStorageLine();
+      return true;
+    } catch (e) {
+      state.storageOk = false;
+      renderStorageLine();
+      showBanner(&#x27;warn&#x27;, &#x27;保存失败：&#x27; + e.message + &#x27;。已回退为内存模式，刷新后本次修改会丢失。&#x27;);
+      return false;
+    }
+  }
+
+  // ---------- 横幅 / 状态提示 ----------
+  function showBanner(kind, text) {
+    el.banner.className = &#x27;banner banner--&#x27; + kind;
+    el.banner.textContent = text; // 安全文本赋值
+    el.banner.hidden = false;
+  }
+  function hideBanner() { el.banner.hidden = true; el.banner.textContent = &#x27;&#x27;; }
+
+  function renderStorageLine() {
+    el.storageLine.textContent = &#x27;&#x27;;
+    var label = document.createElement(&#x27;span&#x27;);
+    if (state.storageOk) {
+      label.className = &#x27;ok&#x27;;
+      label.textContent = &#x27;存储状态：✓ 正常（localStorage 本机保存，修改即时生效）&#x27;;
+    } else {
+      label.className = &#x27;bad&#x27;;
+      label.textContent = &#x27;存储状态：⚠ 内存模式（刷新后数据丢失）&#x27;;
+    }
+    el.storageLine.appendChild(label);
+  }
+
+  // ---------- 渲染 ----------
+  function visibleTasks() {
+    if (state.filter === &#x27;active&#x27;) return state.tasks.filter(function (t) { return !t.done; });
+    if (state.filter === &#x27;done&#x27;) return state.tasks.filter(function (t) { return t.done; });
+    return state.tasks.slice();
+  }
+
+  function emptyCopy() {
+    if (state.filter === &#x27;active&#x27;) {
+      return { title: &#x27;没有未完成的任务&#x27;, text: &#x27;切换到「全部」可查看所有任务，或添加一条新任务。&#x27; };
+    }
+    if (state.filter === &#x27;done&#x27;) {
+      return { title: &#x27;还没有已完成的任务&#x27;, text: &#x27;勾选一条任务后，它会出现在这里。&#x27; };
+    }
+    return { title: &#x27;列表是空的&#x27;, text: &#x27;在上方输入内容并点击「添加」，记录你的第一条任务。&#x27; };
+  }
+
+  function render() {
+    var total = state.tasks.length;
+    var doneCount = 0;
+    for (var i = 0; i &lt; total; i++) if (state.tasks[i].done) doneCount++;
+    el.stats.textContent = total &gt; 0
+      ? &#x27;共 &#x27; + total + &#x27; 项 · 未完成 &#x27; + (total - doneCount) + &#x27; · 已完成 &#x27; + doneCount
+      : &#x27;&#x27;;
+
+    for (var j = 0; j &lt; filterBtns.length; j++) {
+      var b = filterBtns[j];
+      var active = b.getAttribute(&#x27;data-filter&#x27;) === state.filter;
+      if (active) { b.classList.add(&#x27;is-active&#x27;); } else { b.classList.remove(&#x27;is-active&#x27;); }
+      b.setAttribute(&#x27;aria-pressed&#x27;, active ? &#x27;true&#x27; : &#x27;false&#x27;);
+    }
+
+    el.taskList.textContent = &#x27;&#x27;; // 清空旧节点
+    if (state.loading) {
+      el.loadingState.hidden = false;
+      el.emptyState.hidden = true;
+      el.listArea.setAttribute(&#x27;aria-busy&#x27;, &#x27;true&#x27;);
+      return;
+    }
+    el.loadingState.hidden = true;
+    el.listArea.setAttribute(&#x27;aria-busy&#x27;, &#x27;false&#x27;);
+
+    var list = visibleTasks();
+    if (list.length === 0) {
+      var copy = emptyCopy();
+      el.emptyTitle.textContent = copy.title;
+      el.emptyText.textContent = copy.text;
+      el.emptyState.hidden = false;
+    } else {
+      el.emptyState.hidden = true;
+      for (var k = 0; k &lt; list.length; k++) el.taskList.appendChild(renderItem(list[k]));
+    }
+  }
+
+  function renderItem(task) {
+    var li = document.createElement(&#x27;li&#x27;);
+    li.className = &#x27;task-item&#x27; + (task.done ? &#x27; is-done&#x27; : &#x27;&#x27;);
+
+    var check = document.createElement(&#x27;input&#x27;);
+    check.type = &#x27;checkbox&#x27;;
+    check.checked = task.done;
+    check.setAttribute(&#x27;aria-label&#x27;, (task.done ? &#x27;取消完成：&#x27; : &#x27;标记完成：&#x27;) + task.text);
+    check.addEventListener(&#x27;change&#x27;, function () { toggleTask(task.id); });
+
+    var span = document.createElement(&#x27;span&#x27;);
+    span.className = &#x27;task-text&#x27;;
+    span.textContent = task.text; // 用户输入只经此安全赋值渲染
+
+    var del = document.createElement(&#x27;button&#x27;);
+    del.type = &#x27;button&#x27;;
+    del.className = &#x27;del-btn&#x27;;
+    del.textContent = &#x27;删除&#x27;;
+    del.setAttribute(&#x27;aria-label&#x27;, &#x27;删除任务：&#x27; + task.text);
+    del.addEventListener(&#x27;click&#x27;, function () { deleteTask(task.id); });
+
+    li.appendChild(check);
+    li.appendChild(span);
+    li.appendChild(del);
+    return li;
+  }
+
+  // ---------- 业务操作 ----------
+  function findTask(id) {
+    for (var i = 0; i &lt; state.tasks.length; i++) if (state.tasks[i].id === id) return state.tasks[i];
+    return null;
+  }
+
+  function addTask() {
+    var text = el.taskInput.value.trim().slice(0, 120);
+    if (!text) {
+      el.inputError.textContent = &#x27;请输入任务内容，纯空白无法添加。&#x27;;
+      el.inputError.hidden = false;
+      el.taskInput.focus();
+      return;
+    }
+    el.inputError.hidden = true;
+    el.inputError.textContent = &#x27;&#x27;;
+    state.tasks.push({ id: genId(), text: text, done: false, createdAt: Date.now() });
+    var ok = save();
+    if (state.filter === &#x27;done&#x27;) state.filter = &#x27;all&#x27;; // 新任务在「已完成」筛选下不可见，自动切回「全部」
+    el.taskInput.value = &#x27;&#x27;;
+    el.taskInput.focus();
+    render();
+    if (ok) hideBanner();
+  }
+
+  function toggleTask(id) {
+    var t = findTask(id);
+    if (!t) return;
+    t.done = !t.done;
+    save();
+    render();
+  }
+
+  function deleteTask(id) {
+    var next = [];
+    for (var i = 0; i &lt; state.tasks.length; i++) {
+      if (state.tasks[i].id !== id) next.push(state.tasks[i]);
+    }
+    state.tasks = next;
+    save();
+    render();
+  }
+
+  function setFilter(f) {
+    state.filter = f;
+    try {
+      if (!state.simulateFailure &amp;&amp; probeLocalStorage()) window.localStorage.setItem(FILTER_KEY, f);
+    } catch (e) { /* 筛选偏好保存失败不影响功能 */ }
+    render();
+  }
+
+  function applyFilterPref() {
+    try {
+      var raw = state.simulateFailure ? null : window.localStorage.getItem(FILTER_KEY);
+      if (raw === &#x27;all&#x27; || raw === &#x27;active&#x27; || raw === &#x27;done&#x27;) state.filter = raw;
+    } catch (e) {
+      state.filter = &#x27;all&#x27;;
+    }
+  }
+
+  // ---------- 加载（含加载/错误状态） ----------
+  function load() {
+    state.loading = true;
+    render();
+    // 原型演示：用 setTimeout 模拟异步加载过程中的「加载状态」
+    window.setTimeout(function () {
+      var raw = null;
+      try {
+        raw = readRaw();
+      } catch (e) {
+        // 错误状态：读取失败 → 内存模式 + 警告横幅
+        state.storageOk = false;
+        state.tasks = seedTasks();
+        applyFilterPref();
+        state.loading = false;
+        renderStorageLine();
+        showBanner(&#x27;warn&#x27;, &#x27;读取存储失败：&#x27; + e.message + &#x27;。当前使用内存模式（示例数据），刷新后修改会丢失。&#x27;);
+        render();
+        return;
+      }
+      if (raw === null) {
+        // 首次运行：载入虚构示例数据
+        state.tasks = seedTasks();
+        state.storageOk = true;
+        applyFilterPref();
+        state.loading = false;
+        if (save()) showBanner(&#x27;info&#x27;, &#x27;首次运行：已载入 3 条虚构示例任务，可直接体验或在下方一键清空。&#x27;);
+        render();
+        return;
+      }
+      try {
+        var parsed = JSON.parse(raw);
+        var tasks = [];
+        if (parsed &amp;&amp; typeof parsed.length === &#x27;number&#x27;) {
+          for (var i = 0; i &lt; parsed.length; i++) {
+            var t = sanitizeTask(parsed[i]);
+            if (t) tasks.push(t);
+          }
+        }
+        state.tasks = tasks;
+        state.storageOk = true;
+        applyFilterPref();
+        state.loading = false;
+        hideBanner();
+        render();
+      } catch (e2) {
+        // 错误状态：本地数据格式异常
+        state.storageOk = false;
+        state.tasks = seedTasks();
+        applyFilterPref();
+        state.loading = false;
+        renderStorageLine();
+        showBanner(&#x27;warn&#x27;, &#x27;本地数据格式异常（&#x27; + e2.message + &#x27;），已用示例数据替代；建议清空后重新开始。&#x27;);
+        render();
+      }
+    }, LOAD_DELAY_MS);
+  }
+
+  // ---------- 演示控制 ----------
+  el.simFailBtn.addEventListener(&#x27;click&#x27;, function () {
+    state.simulateFailure = true;
+    state.storageOk = false;
+    renderStorageLine();
+    showBanner(&#x27;warn&#x27;, &#x27;已开启「模拟存储故障」：后续保存/读取都会失败，用于演示错误状态。点击「恢复存储并写回」可退出。&#x27;);
+  });
+
+  el.recoverBtn.addEventListener(&#x27;click&#x27;, function () {
+    state.simulateFailure = false;
+    try {
+      if (!probeLocalStorage()) throw new Error(&#x27;localStorage 不可用（沙箱或隐私模式禁止存储）&#x27;);
+      writeRaw(JSON.stringify(state.tasks));
+      state.storageOk = true;
+      renderStorageLine();
+      showBanner(&#x27;info&#x27;, &#x27;存储已恢复，当前内存中的任务已写回本机存储。&#x27;);
+      render();
+    } catch (e) {
+      state.storageOk = false;
+      renderStorageLine();
+      showBanner(&#x27;warn&#x27;, &#x27;恢复失败：&#x27; + e.message + &#x27;。继续以内存模式运行。&#x27;);
+      render();
+    }
+  });
+
+  el.seedBtn.addEventListener(&#x27;click&#x27;, function () {
+    state.tasks = seedTasks();
+    if (save()) showBanner(&#x27;info&#x27;, &#x27;已重置为 3 条虚构示例任务。&#x27;);
+    render();
+  });
+
+  el.clearAllBtn.addEventListener(&#x27;click&#x27;, function () {
+    state.tasks = [];
+    if (save()) hideBanner();
+    render();
+  });
+
+  // ---------- 事件绑定 ----------
+  el.addBtn.addEventListener(&#x27;click&#x27;, addTask);
+  el.taskInput.addEventListener(&#x27;keydown&#x27;, function (ev) {
+    if (ev.key === &#x27;Enter&#x27;) {
+      ev.preventDefault();
+      addTask();
+    }
+  });
+  el.taskInput.addEventListener(&#x27;input&#x27;, function () {
+    if (!el.inputError.hidden) {
+      el.inputError.hidden = true;
+      el.inputError.textContent = &#x27;&#x27;;
+    }
+  });
+  for (var bi = 0; bi &lt; filterBtns.length; bi++) {
+    (function (btn) {
+      btn.addEventListener(&#x27;click&#x27;, function () { setFilter(btn.getAttribute(&#x27;data-filter&#x27;)); });
+    })(filterBtns[bi]);
+  }
+
+  // ---------- 启动 ----------
+  renderStorageLine();
+  load();
+})();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe><h2>deepseek</h2><iframe title="deepseek" sandbox="allow-scripts allow-forms" srcdoc="&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27;; style-src &#x27;unsafe-inline&#x27;; img-src data:; font-src data:; connect-src &#x27;none&#x27;; form-action &#x27;none&#x27;; base-uri &#x27;none&#x27;&quot;&gt;&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;zh-CN&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;color-scheme&quot; content=&quot;light&quot;&gt;
+&lt;title&gt;待办清单 MVP · 单文件交互原型&lt;/title&gt;
+&lt;style&gt;
+  :root{
+    --bg:#f4f5f7; --card:#ffffff; --text:#1f2329; --muted:#6b7280; --line:#e5e7eb;
+    --brand:#2563eb; --brand-soft:#eff6ff; --danger:#dc2626;
+    --warn-bg:#fff7ed; --warn-bd:#fdba74; --warn-tx:#9a3412;
+    --err-bg:#fef2f2; --err-bd:#fca5a5; --err-tx:#991b1b;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,&quot;Segoe UI&quot;,&quot;PingFang SC&quot;,&quot;Hiragino Sans GB&quot;,&quot;Microsoft YaHei&quot;,sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  .app{max-width:720px;margin:0 auto;padding:22px 16px 56px}
+  .hd h1{font-size:22px;margin:0 0 4px;letter-spacing:.5px}
+  .sub{margin:0 0 16px;color:var(--muted);font-size:13px}
+  .notice,.error{border:1px solid;border-radius:10px;padding:10px 12px;font-size:13.5px;margin:0 0 14px;line-height:1.5}
+  .notice{background:var(--warn-bg);border-color:var(--warn-bd);color:var(--warn-tx)}
+  .error{background:var(--err-bg);border-color:var(--err-bd);color:var(--err-tx)}
+  .error strong{display:block;margin-bottom:4px;font-size:14px}
+  .error p{margin:0 0 10px}
+  .error-actions{display:flex;flex-wrap:wrap;gap:8px}
+  .add{display:flex;gap:8px}
+  .input{
+    flex:1 1 auto;min-width:0;height:46px;padding:0 12px;font-size:16px;color:inherit;
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    font-family:inherit;
+  }
+  .input:focus{outline:2px solid #93c5fd;outline-offset:1px;border-color:var(--brand)}
+  .input.invalid{border-color:var(--danger);background:#fff5f5}
+  .btn{
+    height:46px;padding:0 16px;border-radius:10px;border:1px solid var(--line);
+    background:var(--card);color:var(--text);font-size:15px;font-family:inherit;cursor:pointer;
+    flex:0 0 auto;
+  }
+  .btn:hover{border-color:#cbd5e1}
+  .btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+  .btn.primary:hover{background:#1d4ed8}
+  .btn.sm{height:36px;padding:0 12px;font-size:13.5px;border-radius:8px}
+  .btn.danger{color:var(--danger);border-color:#fecaca}
+  .hint{margin:6px 2px 0;min-height:18px;font-size:13px;color:var(--danger)}
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 10px;flex-wrap:wrap}
+  .filters{display:flex;gap:6px;background:#e9ebef;padding:3px;border-radius:10px}
+  .chip{
+    border:0;background:transparent;color:var(--muted);font-size:14px;font-family:inherit;
+    padding:7px 14px;border-radius:8px;cursor:pointer;min-height:34px;
+  }
+  .chip.on{background:var(--card);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(15,23,42,.08)}
+  .chip:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+  .count{font-size:13px;color:var(--muted)}
+  .loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:28px;color:var(--muted);font-size:14px}
+  .spinner{
+    width:16px;height:16px;border:2px solid #cbd5e1;border-top-color:var(--brand);
+    border-radius:50%;animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.spinner{animation-duration:2.4s}}
+  .list{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line)}
+  .item:last-child{border-bottom:0}
+  .check{
+    flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+    width:38px;height:38px;cursor:pointer;border-radius:10px;
+  }
+  .check:hover{background:var(--brand-soft)}
+  .check input{width:20px;height:20px;margin:0;accent-color:var(--brand);cursor:pointer}
+  .check input:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  .text{flex:1 1 auto;min-width:0;overflow-wrap:anywhere;word-break:break-word;font-size:15.5px}
+  .item.done .text{color:var(--muted);text-decoration:line-through}
+  .del{
+    flex:0 0 auto;height:34px;padding:0 10px;border:1px solid transparent;border-radius:8px;
+    background:transparent;color:var(--muted);font-size:13.5px;font-family:inherit;cursor:pointer;
+  }
+  .del:hover{color:var(--danger);border-color:#fecaca;background:#fff5f5}
+  .del:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+  .empty{
+    border:1px dashed #cbd5e1;border-radius:12px;background:var(--card);
+    padding:32px 16px;text-align:center;
+  }
+  .empty-title{margin:0 0 6px;font-size:16px;font-weight:600}
+  .empty-sub{margin:0;font-size:13.5px;color:var(--muted)}
+  .demo{margin-top:26px;border-top:1px dashed #cbd5e1;padding-top:14px}
+  .demo-title{margin:0 0 4px;font-size:13.5px;color:var(--muted);font-weight:600}
+  .demo-note{margin:0 0 10px;font-size:12.5px;color:var(--muted)}
+  .demo-actions{display:flex;flex-wrap:wrap;gap:8px}
+  .demo-status{margin:10px 0 0;font-size:12.5px;color:var(--muted)}
+  .foot{margin-top:22px;font-size:12px;color:#94a3b8;line-height:1.6}
+  .toast{
+    position:fixed;left:50%;bottom:20px;transform:translateX(-50%);
+    display:flex;align-items:center;gap:10px;max-width:min(92vw,520px);
+    background:#111827;color:#fff;padding:10px 14px;border-radius:10px;font-size:13.5px;
+    box-shadow:0 6px 24px rgba(15,23,42,.28);z-index:50;
+  }
+  .toast #toastText{overflow-wrap:anywhere}
+  .btn.link{
+    height:auto;padding:0;border:0;background:none;color:#93c5fd;
+    text-decoration:underline;font-size:13.5px;
+  }
+  @media (max-width:480px){
+    .app{padding:16px 12px 56px}
+    .hd h1{font-size:20px}
+    .btn.primary{padding:0 14px}
+    .chip{padding:7px 10px;font-size:13.5px}
+    .toast{width:calc(100vw - 24px);left:12px;transform:none;bottom:12px}
+  }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class=&quot;app&quot;&gt;
+
+  &lt;header class=&quot;hd&quot;&gt;
+    &lt;h1&gt;待办清单&lt;/h1&gt;
+    &lt;p class=&quot;sub&quot;&gt;单文件本地 MVP · 数据仅保存在本机浏览器，不联网、不登录&lt;/p&gt;
+  &lt;/header&gt;
+
+  &lt;div id=&quot;errorBox&quot; class=&quot;error&quot; role=&quot;alert&quot; hidden&gt;
+    &lt;strong&gt;出错了&lt;/strong&gt;
+    &lt;p id=&quot;errorText&quot;&gt;&lt;/p&gt;
+    &lt;div class=&quot;error-actions&quot;&gt;
+      &lt;button type=&quot;button&quot; id=&quot;retryBtn&quot; class=&quot;btn sm&quot;&gt;重试&lt;/button&gt;
+      &lt;button type=&quot;button&quot; id=&quot;resetBtn&quot; class=&quot;btn sm danger&quot;&gt;清除本地数据并重试&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div id=&quot;notice&quot; class=&quot;notice&quot; role=&quot;status&quot; hidden&gt;
+    &lt;span id=&quot;noticeText&quot;&gt;&lt;/span&gt;
+  &lt;/div&gt;
+
+  &lt;form id=&quot;addForm&quot; class=&quot;add&quot; autocomplete=&quot;off&quot; novalidate&gt;
+    &lt;input id=&quot;taskInput&quot; class=&quot;input&quot; type=&quot;text&quot; maxlength=&quot;200&quot;
+           placeholder=&quot;输入任务，例如：买牛奶&quot; aria-label=&quot;任务内容&quot; enterkeyhint=&quot;done&quot;&gt;
+    &lt;button id=&quot;addBtn&quot; class=&quot;btn primary&quot; type=&quot;submit&quot;&gt;添加&lt;/button&gt;
+  &lt;/form&gt;
+  &lt;p id=&quot;inputHint&quot; class=&quot;hint&quot; aria-live=&quot;polite&quot;&gt;&lt;/p&gt;
+
+  &lt;div class=&quot;bar&quot;&gt;
+    &lt;div class=&quot;filters&quot; role=&quot;group&quot; aria-label=&quot;筛选任务&quot;&gt;
+      &lt;button type=&quot;button&quot; class=&quot;chip&quot; data-filter=&quot;all&quot; aria-pressed=&quot;true&quot;&gt;全部&lt;/button&gt;
+      &lt;button type=&quot;button&quot; class=&quot;chip&quot; data-filter=&quot;active&quot; aria-pressed=&quot;false&quot;&gt;未完成&lt;/button&gt;
+      &lt;button type=&quot;button&quot; class=&quot;chip&quot; data-filter=&quot;done&quot; aria-pressed=&quot;false&quot;&gt;已完成&lt;/button&gt;
+    &lt;/div&gt;
+    &lt;span id=&quot;count&quot; class=&quot;count&quot; aria-live=&quot;polite&quot;&gt;&lt;/span&gt;
+  &lt;/div&gt;
+
+  &lt;div id=&quot;loading&quot; class=&quot;loading&quot; role=&quot;status&quot;&gt;
+    &lt;span class=&quot;spinner&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;
+    &lt;span&gt;正在读取本地数据…&lt;/span&gt;
+  &lt;/div&gt;
+
+  &lt;ul id=&quot;list&quot; class=&quot;list&quot; aria-label=&quot;任务列表&quot;&gt;&lt;/ul&gt;
+
+  &lt;div id=&quot;empty&quot; class=&quot;empty&quot; hidden&gt;
+    &lt;p id=&quot;emptyTitle&quot; class=&quot;empty-title&quot;&gt;&lt;/p&gt;
+    &lt;p id=&quot;emptySub&quot; class=&quot;empty-sub&quot;&gt;&lt;/p&gt;
+  &lt;/div&gt;
+
+  &lt;section class=&quot;demo&quot; aria-label=&quot;原型演示与模拟数据&quot;&gt;
+    &lt;h2 class=&quot;demo-title&quot;&gt;原型演示区（模拟数据 / 故障注入）&lt;/h2&gt;
+    &lt;p class=&quot;demo-note&quot;&gt;本页无后端、无网络请求。以下按钮仅用于演示空状态、错误状态与存储降级。&lt;/p&gt;
+    &lt;div class=&quot;demo-actions&quot;&gt;
+      &lt;button type=&quot;button&quot; id=&quot;seedBtn&quot; class=&quot;btn sm&quot;&gt;载入虚构示例数据&lt;/button&gt;
+      &lt;button type=&quot;button&quot; id=&quot;failBtn&quot; class=&quot;btn sm&quot;&gt;模拟存储写入失败&lt;/button&gt;
+      &lt;button type=&quot;button&quot; id=&quot;recoverBtn&quot; class=&quot;btn sm&quot;&gt;恢复本地存储&lt;/button&gt;
+      &lt;button type=&quot;button&quot; id=&quot;clearBtn&quot; class=&quot;btn sm danger&quot;&gt;清空全部任务&lt;/button&gt;
+    &lt;/div&gt;
+    &lt;p id=&quot;modeText&quot; class=&quot;demo-status&quot;&gt;&lt;/p&gt;
+  &lt;/section&gt;
+
+  &lt;footer class=&quot;foot&quot;&gt;
+    原型说明：纯前端单文件演示，不连接任何后端、账号或第三方服务，运行期间不发送网络请求；
+    示例任务均为公开虚构内容。存储仅使用浏览器 localStorage，不可用时自动回退内存。
+  &lt;/footer&gt;
+&lt;/div&gt;
+
+&lt;div id=&quot;toast&quot; class=&quot;toast&quot; role=&quot;status&quot; hidden&gt;
+  &lt;span id=&quot;toastText&quot;&gt;&lt;/span&gt;
+  &lt;button type=&quot;button&quot; id=&quot;undoBtn&quot; class=&quot;btn link&quot; hidden&gt;撤销&lt;/button&gt;
+&lt;/div&gt;
+
+&lt;noscript&gt;
+  &lt;p style=&quot;max-width:720px;margin:0 auto;padding:16px&quot;&gt;当前浏览器禁用了 JavaScript，本原型无法运行。&lt;/p&gt;
+&lt;/noscript&gt;
+
+&lt;script&gt;
+(function () {
+  &#x27;use strict&#x27;;
+
+  var KEY = &#x27;todo.mvp.v1&#x27;;
+  var MAX_LEN = 200;
+
+  /* 模拟数据：全部为公开虚构内容，仅在点击「载入虚构示例数据」时写入 */
+  var SEED_TASKS = [
+    { text: &#x27;买牛奶（虚构示例）&#x27;, done: false },
+    { text: &#x27;整理会议记录（虚构示例）&#x27;, done: true },
+    { text: &#x27;预约周四牙医（虚构示例）&#x27;, done: false }
+  ];
+
+  function $(id) { return document.getElementById(id); }
+
+  var els = {
+    form: $(&#x27;addForm&#x27;), input: $(&#x27;taskInput&#x27;), hint: $(&#x27;inputHint&#x27;),
+    list: $(&#x27;list&#x27;), empty: $(&#x27;empty&#x27;), emptyTitle: $(&#x27;emptyTitle&#x27;), emptySub: $(&#x27;emptySub&#x27;),
+    count: $(&#x27;count&#x27;), loading: $(&#x27;loading&#x27;),
+    notice: $(&#x27;notice&#x27;), noticeText: $(&#x27;noticeText&#x27;),
+    errorBox: $(&#x27;errorBox&#x27;), errorText: $(&#x27;errorText&#x27;),
+    retryBtn: $(&#x27;retryBtn&#x27;), resetBtn: $(&#x27;resetBtn&#x27;),
+    seedBtn: $(&#x27;seedBtn&#x27;), failBtn: $(&#x27;failBtn&#x27;), recoverBtn: $(&#x27;recoverBtn&#x27;), clearBtn: $(&#x27;clearBtn&#x27;),
+    modeText: $(&#x27;modeText&#x27;),
+    toast: $(&#x27;toast&#x27;), toastText: $(&#x27;toastText&#x27;), undoBtn: $(&#x27;undoBtn&#x27;),
+    chips: Array.prototype.slice.call(document.querySelectorAll(&#x27;.chip&#x27;))
+  };
+
+  var state = { tasks: [], filter: &#x27;all&#x27;, loading: true, fatalError: null };
+  var pendingFocus = null;
+  var undoState = null;
+  var degradeAnnounced = false;
+  var hintTimer = null;
+  var toastTimer = null;
+
+  /* ---------------- 存储适配层：localStorage 优先，异常则回退内存 ---------------- */
+  var storage = (function () {
+    var memList = null;
+    var mode = &#x27;memory&#x27;;
+    var lastError = null;
+
+    function probe() {
+      try {
+        var k = &#x27;__todo_probe__&#x27;;
+        window.localStorage.setItem(k, &#x27;1&#x27;);
+        window.localStorage.removeItem(k);
+        mode = &#x27;local&#x27;; lastError = null; return true;
+      } catch (e) {
+        mode = &#x27;memory&#x27;; lastError = e; return false;
+      }
+    }
+    probe();
+
+    function normalize(raw) {
+      if (!raw || typeof raw !== &#x27;object&#x27;) return null;
+      var text = typeof raw.text === &#x27;string&#x27; ? raw.text : &#x27;&#x27;;
+      if (!text.trim()) return null;
+      return {
+        id: typeof raw.id === &#x27;string&#x27; &amp;&amp; raw.id ? raw.id : (&#x27;t&#x27; + Math.random().toString(36).slice(2, 9)),
+        text: text.slice(0, MAX_LEN),
+        done: raw.done === true,
+        createdAt: typeof raw.createdAt === &#x27;number&#x27; ? raw.createdAt : Date.now()
+      };
+    }
+
+    return {
+      mode: function () { return mode; },
+      probe: probe,
+      forceMemory: function (reason) { mode = &#x27;memory&#x27;; lastError = reason || new Error(&#x27;模拟：写入被拒绝&#x27;); },
+      lastError: function () { return lastError; },
+      read: function () {
+        if (mode !== &#x27;local&#x27;) return { ok: true, data: memList || [] };
+        try {
+          var raw = window.localStorage.getItem(KEY);
+          if (raw === null) { memList = []; return { ok: true, data: [] }; }
+          var parsed = JSON.parse(raw);
+          if (!Array.isArray(parsed)) throw new Error(&#x27;本地数据格式不是任务数组&#x27;);
+          memList = parsed.map(normalize).filter(function (t) { return t !== null; });
+          return { ok: true, data: memList };
+        } catch (e) {
+          lastError = e;
+          return { ok: false, reason: &#x27;parse&#x27;, error: e };
+        }
+      },
+      write: function (list) {
+        memList = list.slice();
+        if (mode !== &#x27;local&#x27;) return { ok: false, degraded: true, error: lastError };
+        try {
+          window.localStorage.setItem(KEY, JSON.stringify(list));
+          return { ok: true };
+        } catch (e) {
+          mode = &#x27;memory&#x27;; lastError = e;
+          return { ok: false, degraded: true, error: e };
+        }
+      },
+      clear: function () {
+        memList = [];
+        if (mode === &#x27;local&#x27;) {
+          try { window.localStorage.removeItem(KEY); }
+          catch (e) { mode = &#x27;memory&#x27;; lastError = e; }
+        }
+      }
+    };
+  })();
+
+  /* ---------------- 工具 ---------------- */
+  function uid() { return &#x27;t&#x27; + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  function clip(s, n) { s = String(s); return s.length &gt; n ? s.slice(0, n) + &#x27;…&#x27; : s; }
+
+  function findTask(id) {
+    for (var i = 0; i &lt; state.tasks.length; i++) { if (state.tasks[i].id === id) return state.tasks[i]; }
+    return null;
+  }
+
+  function visibleTasks() {
+    if (state.filter === &#x27;active&#x27;) return state.tasks.filter(function (t) { return !t.done; });
+    if (state.filter === &#x27;done&#x27;) return state.tasks.filter(function (t) { return t.done; });
+    return state.tasks;
+  }
+
+  function showHint(msg) {
+    els.hint.textContent = msg;
+    els.input.classList.add(&#x27;invalid&#x27;);
+    if (hintTimer) window.clearTimeout(hintTimer);
+    hintTimer = window.setTimeout(function () {
+      els.hint.textContent = &#x27;&#x27;;
+      els.input.classList.remove(&#x27;invalid&#x27;);
+    }, 2400);
+  }
+
+  function showToast(msg, canUndo) {
+    els.toastText.textContent = msg;          /* 安全文本赋值 */
+    els.undoBtn.hidden = !canUndo;
+    els.toast.hidden = false;
+    if (toastTimer) window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(function () { els.toast.hidden = true; }, 6000);
+  }
+
+  /* ---------------- 持久化 ---------------- */
+  function persist() {
+    var r = storage.write(state.tasks);
+    if (!r.ok &amp;&amp; r.degraded &amp;&amp; !degradeAnnounced) {
+      degradeAnnounced = true;
+      showToast(&#x27;本地存储不可用，已切换为内存模式（刷新后数据会丢失）&#x27;, false);
+    }
+  }
+
+  /* ---------------- 渲染 ---------------- */
+  function renderChips() {
+    els.chips.forEach(function (c) {
+      var on = c.getAttribute(&#x27;data-filter&#x27;) === state.filter;
+      c.setAttribute(&#x27;aria-pressed&#x27;, on ? &#x27;true&#x27; : &#x27;false&#x27;);
+      c.classList.toggle(&#x27;on&#x27;, on);
+    });
+  }
+
+  function renderCount() {
+    var left = state.tasks.filter(function (t) { return !t.done; }).length;
+    els.count.textContent = state.loading ? &#x27;&#x27; :
+      (&#x27;共 &#x27; + state.tasks.length + &#x27; 条 · 未完成 &#x27; + left + &#x27; 条&#x27;);
+  }
+
+  function renderList() {
+    var items = visibleTasks();
+    els.list.textContent = &#x27;&#x27;;
+    items.forEach(function (t) {
+      var li = document.createElement(&#x27;li&#x27;);
+      li.className = &#x27;item&#x27; + (t.done ? &#x27; done&#x27; : &#x27;&#x27;);
+      li.setAttribute(&#x27;data-id&#x27;, t.id);
+
+      var label = document.createElement(&#x27;label&#x27;);
+      label.className = &#x27;check&#x27;;
+      var cb = document.createElement(&#x27;input&#x27;);
+      cb.type = &#x27;checkbox&#x27;;
+      cb.checked = !!t.done;
+      cb.setAttribute(&#x27;aria-label&#x27;, (t.done ? &#x27;取消完成：&#x27; : &#x27;标记完成：&#x27;) + t.text);
+      cb.addEventListener(&#x27;change&#x27;, function () { toggleTask(t.id); });
+      label.appendChild(cb);
+
+      var span = document.createElement(&#x27;span&#x27;);
+      span.className = &#x27;text&#x27;;
+      span.textContent = t.text;              /* 安全文本赋值，不解析 HTML */
+
+      var del = document.createElement(&#x27;button&#x27;);
+      del.type = &#x27;button&#x27;;
+      del.className = &#x27;del&#x27;;
+      del.textContent = &#x27;删除&#x27;;
+      del.setAttribute(&#x27;aria-label&#x27;, &#x27;删除任务：&#x27; + t.text);
+      del.addEventListener(&#x27;click&#x27;, function () { deleteTask(t.id); });
+
+      li.appendChild(label);
+      li.appendChild(span);
+      li.appendChild(del);
+      els.list.appendChild(li);
+    });
+  }
+
+  function renderEmpty() {
+    if (state.loading) { els.empty.hidden = true; return; }
+    var items = visibleTasks();
+    if (state.tasks.length === 0) {
+      els.empty.hidden = false;
+      els.emptyTitle.textContent = &#x27;还没有任务，添加第一条吧&#x27;;
+      els.emptySub.textContent = &#x27;在上方输入内容后按回车，或点击「添加」。&#x27;;
+    } else if (items.length === 0) {
+      els.empty.hidden = false;
+      els.emptyTitle.textContent = &#x27;这里还没有任务&#x27;;
+      els.emptySub.textContent = state.filter === &#x27;active&#x27;
+        ? &#x27;当前没有未完成任务，可切换到「已完成」查看。&#x27;
+        : (state.filter === &#x27;done&#x27; ? &#x27;还没有已完成的任务，勾选复选框即可完成。&#x27; : &#x27;请切换筛选条件。&#x27;);
+    } else {
+      els.empty.hidden = true;
+    }
+  }
+
+  function renderNotice() {
+    if (state.loading || storage.mode() === &#x27;local&#x27;) { els.notice.hidden = true; return; }
+    els.notice.hidden = false;
+    els.noticeText.textContent = &#x27;当前环境无法使用本地存储（localStorage）。功能仍可正常使用，已回退为内存模式：刷新或关闭页面后数据会丢失。&#x27;;
+  }
+
+  function renderMode() {
+    els.modeText.textContent = &#x27;当前存储模式：&#x27; + (storage.mode() === &#x27;local&#x27;
+      ? &#x27;浏览器本地存储（localStorage，刷新后数据保留）&#x27;
+      : &#x27;内存（临时，刷新后数据丢失）&#x27;);
+  }
+
+  function renderError() {
+    if (!state.fatalError) { els.errorBox.hidden = true; return; }
+    els.errorBox.hidden = false;
+    var msg = state.fatalError &amp;&amp; state.fatalError.message ? state.fatalError.message : &#x27;未知错误&#x27;;
+    els.errorText.textContent = &#x27;读取本地数据失败：&#x27; + msg +
+      &#x27;。你可以「重试」，或「清除本地数据并重试」后重新开始。&#x27;;
+  }
+
+  function applyPendingFocus() {
+    if (!pendingFocus) return;
+    var p = pendingFocus;
+    pendingFocus = null;
+    var el = null;
+    if (p.id) {
+      var li = els.list.querySelector(&#x27;li[data-id=&quot;&#x27; + p.id + &#x27;&quot;]&#x27;);
+      if (li) el = li.querySelector(p.kind === &#x27;delete&#x27; ? &#x27;.del&#x27; : &#x27;input[type=&quot;checkbox&quot;]&#x27;);
+    }
+    if (el) { el.focus(); return; }
+    if (p.fallback &amp;&amp; document.contains(p.fallback)) p.fallback.focus();
+  }
+
+  function render() {
+    els.loading.hidden = !state.loading;
+    renderError();
+    renderList();
+    renderCount();
+    renderEmpty();
+    renderNotice();
+    renderMode();
+    renderChips();
+    applyPendingFocus();
+  }
+
+  /* ---------------- 业务动作 ---------------- */
+  function addTask(rawText) {
+    var text = String(rawText).trim();
+    if (!text) return false;
+    if (text.length &gt; MAX_LEN) text = text.slice(0, MAX_LEN);
+    state.tasks.push({ id: uid(), text: text, done: false, createdAt: Date.now() });
+    persist();
+    render();
+    return true;
+  }
+
+  function toggleTask(id) {
+    var t = findTask(id);
+    if (!t) return;
+    t.done = !t.done;
+    pendingFocus = { id: id, kind: &#x27;checkbox&#x27;, fallback: activeChipEl() };
+    persist();
+    render();
+    showToast(t.done ? (&#x27;已完成：&#x27; + clip(t.text, 14)) : (&#x27;已恢复未完成：&#x27; + clip(t.text, 14)), false);
+  }
+
+  function deleteTask(id) {
+    for (var i = 0; i &lt; state.tasks.length; i++) {
+      if (state.tasks[i].id === id) {
+        var task = state.tasks[i];
+        undoState = { type: &#x27;delete&#x27;, task: task, index: i };
+        state.tasks.splice(i, 1);
+        persist();
+        render();
+        showToast(&#x27;已删除「&#x27; + clip(task.text, 12) + &#x27;」&#x27;, true);
+        return;
+      }
+    }
+  }
+
+  function activeChipEl() {
+    for (var i = 0; i &lt; els.chips.length; i++) {
+      if (els.chips[i].getAttribute(&#x27;data-filter&#x27;) === state.filter) return els.chips[i];
+    }
+    return els.chips[0];
+  }
+
+  /* ---------------- 事件绑定 ---------------- */
+  els.form.addEventListener(&#x27;submit&#x27;, function (ev) {
+    ev.preventDefault();
+    var ok = addTask(els.input.value);
+    if (!ok) { showHint(&#x27;请输入任务内容&#x27;); els.input.focus(); return; }
+    els.input.value = &#x27;&#x27;;
+    els.hint.textContent = &#x27;&#x27;;
+    els.input.classList.remove(&#x27;invalid&#x27;);
+    els.input.focus();
+  });
+
+  els.input.addEventListener(&#x27;input&#x27;, function () {
+    if (els.input.value.trim() !== &#x27;&#x27;) {
+      els.hint.textContent = &#x27;&#x27;;
+      els.input.classList.remove(&#x27;invalid&#x27;);
+    }
+  });
+
+  els.chips.forEach(function (c) {
+    c.addEventListener(&#x27;click&#x27;, function () {
+      state.filter = c.getAttribute(&#x27;data-filter&#x27;);
+      render();
+    });
+  });
+
+  els.retryBtn.addEventListener(&#x27;click&#x27;, function () { boot(); });
+
+  els.resetBtn.addEventListener(&#x27;click&#x27;, function () {
+    storage.clear();
+    undoState = null;
+    boot();
+    showToast(&#x27;已清除本地数据&#x27;, false);
+  });
+
+  els.seedBtn.addEventListener(&#x27;click&#x27;, function () {
+    var added = 0;
+    SEED_TASKS.forEach(function (s) {
+      var exists = state.tasks.some(function (t) { return t.text === s.text; });
+      if (!exists) {
+        state.tasks.push({ id: uid(), text: s.text, done: s.done, createdAt: Date.now() });
+        added++;
+      }
+    });
+    persist();
+    render();
+    showToast(added &gt; 0 ? (&#x27;已载入 &#x27; + added + &#x27; 条虚构示例数据&#x27;) : &#x27;示例数据已存在，未重复载入&#x27;, false);
+  });
+
+  els.failBtn.addEventListener(&#x27;click&#x27;, function () {
+    storage.forceMemory(new Error(&#x27;模拟：写入被浏览器拒绝（演示用）&#x27;));
+    degradeAnnounced = true;
+    render();
+    showToast(&#x27;已模拟存储写入失败，当前为内存模式&#x27;, false);
+  });
+
+  els.recoverBtn.addEventListener(&#x27;click&#x27;, function () {
+    if (storage.probe()) {
+      var res = storage.read();
+      state.fatalError = null;
+      if (res.ok) state.tasks = res.data || [];
+      degradeAnnounced = false;
+      render();
+      showToast(&#x27;已恢复本地存储模式&#x27;, false);
+    } else {
+      render();
+      showToast(&#x27;仍无法使用本地存储，继续内存模式&#x27;, false);
+    }
+  });
+
+  els.clearBtn.addEventListener(&#x27;click&#x27;, function () {
+    if (state.tasks.length === 0) { showToast(&#x27;当前没有任务&#x27;, false); return; }
+    undoState = { type: &#x27;clear&#x27;, tasks: state.tasks.slice() };
+    state.tasks = [];
+    persist();
+    render();
+    showToast(&#x27;已清空全部任务&#x27;, true);
+  });
+
+  els.undoBtn.addEventListener(&#x27;click&#x27;, function () {
+    if (!undoState) { els.toast.hidden = true; return; }
+    if (undoState.type === &#x27;delete&#x27;) {
+      var i = Math.min(Math.max(undoState.index, 0), state.tasks.length);
+      state.tasks.splice(i, 0, undoState.task);
+    } else if (undoState.type === &#x27;clear&#x27;) {
+      state.tasks = undoState.tasks.slice();
+    }
+    undoState = null;
+    state.filter = &#x27;all&#x27;;
+    persist();
+    render();
+    els.toast.hidden = true;
+    els.input.focus();
+  });
+
+  /* ---------------- 启动（模拟读取延迟，无网络请求） ---------------- */
+  function boot() {
+    state.loading = true;
+    state.fatalError = null;
+    render();
+    window.setTimeout(function () {
+      var res;
+      try {
+        res = storage.read();
+      } catch (e) {
+        res = { ok: false, error: e };
+      }
+      if (res.ok) {
+        state.tasks = res.data || [];
+      } else {
+        state.tasks = [];
+        state.fatalError = res.error || new Error(&#x27;无法读取本地数据&#x27;);
+      }
+      state.loading = false;
+      render();
+    }, 420);
+  }
+
+  boot();
+})();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></html>

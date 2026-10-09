@@ -2,6 +2,7 @@
 
 mod antigravity_hook;
 mod clipboard_writer;
+pub(crate) mod factory_adapter;
 mod fs_monitor;
 mod health;
 mod item_revealer;

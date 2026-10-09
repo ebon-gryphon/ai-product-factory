@@ -4,8 +4,14 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
+# Support both the standalone backend and the factory monorepo.
+migration_dir="crates/aionui-db/migrations"
+if [[ -d "$repo_root/AionCore/$migration_dir" ]]; then
+    migration_dir="AionCore/$migration_dir"
+fi
+
 duplicate_versions="$(
-    find crates/aionui-db/migrations -maxdepth 1 -type f -name '*.sql' -print \
+    find "$migration_dir" -maxdepth 1 -type f -name '*.sql' -print \
         | awk -F/ '
             {
                 name = $NF
@@ -64,7 +70,7 @@ fi
 
 base_commit="$(git merge-base HEAD "$base_ref")"
 changed="$(
-    git diff --name-status --diff-filter=DMR "$base_commit" -- 'crates/aionui-db/migrations/*.sql'
+    git diff --name-status --diff-filter=DMR "$base_commit" -- "$migration_dir/*.sql"
 )"
 
 if [[ -n "$changed" ]]; then

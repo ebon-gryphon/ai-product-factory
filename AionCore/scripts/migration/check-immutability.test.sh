@@ -83,4 +83,18 @@ printf '%s\n' '-- modified with explicit override' >> "$override_repo/crates/aio
 run_in_repo "$override_repo" 0 "skipping migration immutability check" \
     env AIONCORE_MIGRATION_BASE_REF=main AIONCORE_ALLOW_MAIN_MIGRATION_EDIT=1 bash "$script"
 
+monorepo="$(init_case_repo monorepo)"
+(
+    cd "$monorepo"
+    mkdir AionCore
+    git mv crates AionCore/
+    git commit -q -m "nest backend in monorepo"
+    git branch -f main HEAD
+)
+run_in_repo "$monorepo/AionCore" 0 "Migration immutability check passed" \
+    env AIONCORE_MIGRATION_BASE_REF=main bash "$script"
+printf '%s\n' '-- changed in monorepo' >> "$monorepo/AionCore/crates/aionui-db/migrations/001_initial_schema.sql"
+run_in_repo "$monorepo/AionCore" 1 "Existing migration files from main must not be modified or deleted" \
+    env AIONCORE_MIGRATION_BASE_REF=main bash "$script"
+
 echo "Migration immutability script tests passed"

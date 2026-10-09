@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>待办清单 MVP · 单文件交互原型</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --card:#ffffff; --text:#1f2329; --muted:#6b7280; --line:#e5e7eb;
+    --brand:#2563eb; --brand-soft:#eff6ff; --danger:#dc2626;
+    --warn-bg:#fff7ed; --warn-bd:#fdba74; --warn-tx:#9a3412;
+    --err-bg:#fef2f2; --err-bd:#fca5a5; --err-tx:#991b1b;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  .app{max-width:720px;margin:0 auto;padding:22px 16px 56px}
+  .hd h1{font-size:22px;margin:0 0 4px;letter-spacing:.5px}
+  .sub{margin:0 0 16px;color:var(--muted);font-size:13px}
+  .notice,.error{border:1px solid;border-radius:10px;padding:10px 12px;font-size:13.5px;margin:0 0 14px;line-height:1.5}
+  .notice{background:var(--warn-bg);border-color:var(--warn-bd);color:var(--warn-tx)}
+  .error{background:var(--err-bg);border-color:var(--err-bd);color:var(--err-tx)}
+  .error strong{display:block;margin-bottom:4px;font-size:14px}
+  .error p{margin:0 0 10px}
+  .error-actions{display:flex;flex-wrap:wrap;gap:8px}
+  .add{display:flex;gap:8px}
+  .input{
+    flex:1 1 auto;min-width:0;height:46px;padding:0 12px;font-size:16px;color:inherit;
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    font-family:inherit;
+  }
+  .input:focus{outline:2px solid #93c5fd;outline-offset:1px;border-color:var(--brand)}
+  .input.invalid{border-color:var(--danger);background:#fff5f5}
+  .btn{
+    height:46px;padding:0 16px;border-radius:10px;border:1px solid var(--line);
+    background:var(--card);color:var(--text);font-size:15px;font-family:inherit;cursor:pointer;
+    flex:0 0 auto;
+  }
+  .btn:hover{border-color:#cbd5e1}
+  .btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600}
+  .btn.primary:hover{background:#1d4ed8}
+  .btn.sm{height:36px;padding:0 12px;font-size:13.5px;border-radius:8px}
+  .btn.danger{color:var(--danger);border-color:#fecaca}
+  .hint{margin:6px 2px 0;min-height:18px;font-size:13px;color:var(--danger)}
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 10px;flex-wrap:wrap}
+  .filters{display:flex;gap:6px;background:#e9ebef;padding:3px;border-radius:10px}
+  .chip{
+    border:0;background:transparent;color:var(--muted);font-size:14px;font-family:inherit;
+    padding:7px 14px;border-radius:8px;cursor:pointer;min-height:34px;
+  }
+  .chip.on{background:var(--card);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(15,23,42,.08)}
+  .chip:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+  .count{font-size:13px;color:var(--muted)}
+  .loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:28px;color:var(--muted);font-size:14px}
+  .spinner{
+    width:16px;height:16px;border:2px solid #cbd5e1;border-top-color:var(--brand);
+    border-radius:50%;animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.spinner{animation-duration:2.4s}}
+  .list{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line)}
+  .item:last-child{border-bottom:0}
+  .check{
+    flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+    width:38px;height:38px;cursor:pointer;border-radius:10px;
+  }
+  .check:hover{background:var(--brand-soft)}
+  .check input{width:20px;height:20px;margin:0;accent-color:var(--brand);cursor:pointer}
+  .check input:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  .text{flex:1 1 auto;min-width:0;overflow-wrap:anywhere;word-break:break-word;font-size:15.5px}
+  .item.done .text{color:var(--muted);text-decoration:line-through}
+  .del{
+    flex:0 0 auto;height:34px;padding:0 10px;border:1px solid transparent;border-radius:8px;
+    background:transparent;color:var(--muted);font-size:13.5px;font-family:inherit;cursor:pointer;
+  }
+  .del:hover{color:var(--danger);border-color:#fecaca;background:#fff5f5}
+  .del:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+  .empty{
+    border:1px dashed #cbd5e1;border-radius:12px;background:var(--card);
+    padding:32px 16px;text-align:center;
+  }
+  .empty-title{margin:0 0 6px;font-size:16px;font-weight:600}
+  .empty-sub{margin:0;font-size:13.5px;color:var(--muted)}
+  .demo{margin-top:26px;border-top:1px dashed #cbd5e1;padding-top:14px}
+  .demo-title{margin:0 0 4px;font-size:13.5px;color:var(--muted);font-weight:600}
+  .demo-note{margin:0 0 10px;font-size:12.5px;color:var(--muted)}
+  .demo-actions{display:flex;flex-wrap:wrap;gap:8px}
+  .demo-status{margin:10px 0 0;font-size:12.5px;color:var(--muted)}
+  .foot{margin-top:22px;font-size:12px;color:#94a3b8;line-height:1.6}
+  .toast{
+    position:fixed;left:50%;bottom:20px;transform:translateX(-50%);
+    display:flex;align-items:center;gap:10px;max-width:min(92vw,520px);
+    background:#111827;color:#fff;padding:10px 14px;border-radius:10px;font-size:13.5px;
+    box-shadow:0 6px 24px rgba(15,23,42,.28);z-index:50;
+  }
+  .toast #toastText{overflow-wrap:anywhere}
+  .btn.link{
+    height:auto;padding:0;border:0;background:none;color:#93c5fd;
+    text-decoration:underline;font-size:13.5px;
+  }
+  @media (max-width:480px){
+    .app{padding:16px 12px 56px}
+    .hd h1{font-size:20px}
+    .btn.primary{padding:0 14px}
+    .chip{padding:7px 10px;font-size:13.5px}
+    .toast{width:calc(100vw - 24px);left:12px;transform:none;bottom:12px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="hd">
+    <h1>待办清单</h1>
+    <p class="sub">单文件本地 MVP · 数据仅保存在本机浏览器，不联网、不登录</p>
+  </header>
+
+  <div id="errorBox" class="error" role="alert" hidden>
+    <strong>出错了</strong>
+    <p id="errorText"></p>
+    <div class="error-actions">
+      <button type="button" id="retryBtn" class="btn sm">重试</button>
+      <button type="button" id="resetBtn" class="btn sm danger">清除本地数据并重试</button>
+    </div>
+  </div>
+
+  <div id="notice" class="notice" role="status" hidden>
+    <span id="noticeText"></span>
+  </div>
+
+  <form id="addForm" class="add" autocomplete="off" novalidate>
+    <input id="taskInput" class="input" type="text" maxlength="200"
+           placeholder="输入任务，例如：买牛奶" aria-label="任务内容" enterkeyhint="done">
+    <button id="addBtn" class="btn primary" type="submit">添加</button>
+  </form>
+  <p id="inputHint" class="hint" aria-live="polite"></p>
+
+  <div class="bar">
+    <div class="filters" role="group" aria-label="筛选任务">
+      <button type="button" class="chip" data-filter="all" aria-pressed="true">全部</button>
+      <button type="button" class="chip" data-filter="active" aria-pressed="false">未完成</button>
+      <button type="button" class="chip" data-filter="done" aria-pressed="false">已完成</button>
+    </div>
+    <span id="count" class="count" aria-live="polite"></span>
+  </div>
+
+  <div id="loading" class="loading" role="status">
+    <span class="spinner" aria-hidden="true"></span>
+    <span>正在读取本地数据…</span>
+  </div>
+
+  <ul id="list" class="list" aria-label="任务列表"></ul>
+
+  <div id="empty" class="empty" hidden>
+    <p id="emptyTitle" class="empty-title"></p>
+    <p id="emptySub" class="empty-sub"></p>
+  </div>
+
+  <section class="demo" aria-label="原型演示与模拟数据">
+    <h2 class="demo-title">原型演示区（模拟数据 / 故障注入）</h2>
+    <p class="demo-note">本页无后端、无网络请求。以下按钮仅用于演示空状态、错误状态与存储降级。</p>
+    <div class="demo-actions">
+      <button type="button" id="seedBtn" class="btn sm">载入虚构示例数据</button>
+      <button type="button" id="failBtn" class="btn sm">模拟存储写入失败</button>
+      <button type="button" id="recoverBtn" class="btn sm">恢复本地存储</button>
+      <button type="button" id="clearBtn" class="btn sm danger">清空全部任务</button>
+    </div>
+    <p id="modeText" class="demo-status"></p>
+  </section>
+
+  <footer class="foot">
+    原型说明：纯前端单文件演示，不连接任何后端、账号或第三方服务，运行期间不发送网络请求；
+    示例任务均为公开虚构内容。存储仅使用浏览器 localStorage，不可用时自动回退内存。
+  </footer>
+</div>
+
+<div id="toast" class="toast" role="status" hidden>
+  <span id="toastText"></span>
+  <button type="button" id="undoBtn" class="btn link" hidden>撤销</button>
+</div>
+
+<noscript>
+  <p style="max-width:720px;margin:0 auto;padding:16px">当前浏览器禁用了 JavaScript，本原型无法运行。</p>
+</noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  var KEY = 'todo.mvp.v1';
+  var MAX_LEN = 200;
+
+  /* 模拟数据：全部为公开虚构内容，仅在点击「载入虚构示例数据」时写入 */
+  var SEED_TASKS = [
+    { text: '买牛奶（虚构示例）', done: false },
+    { text: '整理会议记录（虚构示例）', done: true },
+    { text: '预约周四牙医（虚构示例）', done: false }
+  ];
+
+  function $(id) { return document.getElementById(id); }
+
+  var els = {
+    form: $('addForm'), input: $('taskInput'), hint: $('inputHint'),
+    list: $('list'), empty: $('empty'), emptyTitle: $('emptyTitle'), emptySub: $('emptySub'),
+    count: $('count'), loading: $('loading'),
+    notice: $('notice'), noticeText: $('noticeText'),
+    errorBox: $('errorBox'), errorText: $('errorText'),
+    retryBtn: $('retryBtn'), resetBtn: $('resetBtn'),
+    seedBtn: $('seedBtn'), failBtn: $('failBtn'), recoverBtn: $('recoverBtn'), clearBtn: $('clearBtn'),
+    modeText: $('modeText'),
+    toast: $('toast'), toastText: $('toastText'), undoBtn: $('undoBtn'),
+    chips: Array.prototype.slice.call(document.querySelectorAll('.chip'))
+  };
+
+  var state = { tasks: [], filter: 'all', loading: true, fatalError: null };
+  var pendingFocus = null;
+  var undoState = null;
+  var degradeAnnounced = false;
+  var hintTimer = null;
+  var toastTimer = null;
+
+  /* ---------------- 存储适配层：localStorage 优先，异常则回退内存 ---------------- */
+  var storage = (function () {
+    var memList = null;
+    var mode = 'memory';
+    var lastError = null;
+
+    function probe() {
+      try {
+        var k = '__todo_probe__';
+        window.localStorage.setItem(k, '1');
+        window.localStorage.removeItem(k);
+        mode = 'local'; lastError = null; return true;
+      } catch (e) {
+        mode = 'memory'; lastError = e; return false;
+      }
+    }
+    probe();
+
+    function normalize(raw) {
+      if (!raw || typeof raw !== 'object') return null;
+      var text = typeof raw.text === 'string' ? raw.text : '';
+      if (!text.trim()) return null;
+      return {
+        id: typeof raw.id === 'string' && raw.id ? raw.id : ('t' + Math.random().toString(36).slice(2, 9)),
+        text: text.slice(0, MAX_LEN),
+        done: raw.done === true,
+        createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now()
+      };
+    }
+
+    return {
+      mode: function () { return mode; },
+      probe: probe,
+      forceMemory: function (reason) { mode = 'memory'; lastError = reason || new Error('模拟：写入被拒绝'); },
+      lastError: function () { return lastError; },
+      read: function () {
+        if (mode !== 'local') return { ok: true, data: memList || [] };
+        try {
+          var raw = window.localStorage.getItem(KEY);
+          if (raw === null) { memList = []; return { ok: true, data: [] }; }
+          var parsed = JSON.parse(raw);
+          if (!Array.isArray(parsed)) throw new Error('本地数据格式不是任务数组');
+          memList = parsed.map(normalize).filter(function (t) { return t !== null; });
+          return { ok: true, data: memList };
+        } catch (e) {
+          lastError = e;
+          return { ok: false, reason: 'parse', error: e };
+        }
+      },
+      write: function (list) {
+        memList = list.slice();
+        if (mode !== 'local') return { ok: false, degraded: true, error: lastError };
+        try {
+          window.localStorage.setItem(KEY, JSON.stringify(list));
+          return { ok: true };
+        } catch (e) {
+          mode = 'memory'; lastError = e;
+          return { ok: false, degraded: true, error: e };
+        }
+      },
+      clear: function () {
+        memList = [];
+        if (mode === 'local') {
+          try { window.localStorage.removeItem(KEY); }
+          catch (e) { mode = 'memory'; lastError = e; }
+        }
+      }
+    };
+  })();
+
+  /* ---------------- 工具 ---------------- */
+  function uid() { return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  function clip(s, n) { s = String(s); return s.length > n ? s.slice(0, n) + '…' : s; }
+
+  function findTask(id) {
+    for (var i = 0; i < state.tasks.length; i++) { if (state.tasks[i].id === id) return state.tasks[i]; }
+    return null;
+  }
+
+  function visibleTasks() {
+    if (state.filter === 'active') return state.tasks.filter(function (t) { return !t.done; });
+    if (state.filter === 'done') return state.tasks.filter(function (t) { return t.done; });
+    return state.tasks;
+  }
+
+  function showHint(msg) {
+    els.hint.textContent = msg;
+    els.input.classList.add('invalid');
+    if (hintTimer) window.clearTimeout(hintTimer);
+    hintTimer = window.setTimeout(function () {
+      els.hint.textContent = '';
+      els.input.classList.remove('invalid');
+    }, 2400);
+  }
+
+  function showToast(msg, canUndo) {
+    els.toastText.textContent = msg;          /* 安全文本赋值 */
+    els.undoBtn.hidden = !canUndo;
+    els.toast.hidden = false;
+    if (toastTimer) window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(function () { els.toast.hidden = true; }, 6000);
+  }
+
+  /* ---------------- 持久化 ---------------- */
+  function persist() {
+    var r = storage.write(state.tasks);
+    if (!r.ok && r.degraded && !degradeAnnounced) {
+      degradeAnnounced = true;
+      showToast('本地存储不可用，已切换为内存模式（刷新后数据会丢失）', false);
+    }
+  }
+
+  /* ---------------- 渲染 ---------------- */
+  function renderChips() {
+    els.chips.forEach(function (c) {
+      var on = c.getAttribute('data-filter') === state.filter;
+      c.setAttribute('aria-pressed', on ? 'true' : 'false');
+      c.classList.toggle('on', on);
+    });
+  }
+
+  function renderCount() {
+    var left = state.tasks.filter(function (t) { return !t.done; }).length;
+    els.count.textContent = state.loading ? '' :
+      ('共 ' + state.tasks.length + ' 条 · 未完成 ' + left + ' 条');
+  }
+
+  function renderList() {
+    var items = visibleTasks();
+    els.list.textContent = '';
+    items.forEach(function (t) {
+      var li = document.createElement('li');
+      li.className = 'item' + (t.done ? ' done' : '');
+      li.setAttribute('data-id', t.id);
+
+      var label = document.createElement('label');
+      label.className = 'check';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = !!t.done;
+      cb.setAttribute('aria-label', (t.done ? '取消完成：' : '标记完成：') + t.text);
+      cb.addEventListener('change', function () { toggleTask(t.id); });
+      label.appendChild(cb);
+
+      var span = document.createElement('span');
+      span.className = 'text';
+      span.textContent = t.text;              /* 安全文本赋值，不解析 HTML */
+
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'del';
+      del.textContent = '删除';
+      del.setAttribute('aria-label', '删除任务：' + t.text);
+      del.addEventListener('click', function () { deleteTask(t.id); });
+
+      li.appendChild(label);
+      li.appendChild(span);
+      li.appendChild(del);
+      els.list.appendChild(li);
+    });
+  }
+
+  function renderEmpty() {
+    if (state.loading) { els.empty.hidden = true; return; }
+    var items = visibleTasks();
+    if (state.tasks.length === 0) {
+      els.empty.hidden = false;
+      els.emptyTitle.textContent = '还没有任务，添加第一条吧';
+      els.emptySub.textContent = '在上方输入内容后按回车，或点击「添加」。';
+    } else if (items.length === 0) {
+      els.empty.hidden = false;
+      els.emptyTitle.textContent = '这里还没有任务';
+      els.emptySub.textContent = state.filter === 'active'
+        ? '当前没有未完成任务，可切换到「已完成」查看。'
+        : (state.filter === 'done' ? '还没有已完成的任务，勾选复选框即可完成。' : '请切换筛选条件。');
+    } else {
+      els.empty.hidden = true;
+    }
+  }
+
+  function renderNotice() {
+    if (state.loading || storage.mode() === 'local') { els.notice.hidden = true; return; }
+    els.notice.hidden = false;
+    els.noticeText.textContent = '当前环境无法使用本地存储（localStorage）。功能仍可正常使用，已回退为内存模式：刷新或关闭页面后数据会丢失。';
+  }
+
+  function renderMode() {
+    els.modeText.textContent = '当前存储模式：' + (storage.mode() === 'local'
+      ? '浏览器本地存储（localStorage，刷新后数据保留）'
+      : '内存（临时，刷新后数据丢失）');
+  }
+
+  function renderError() {
+    if (!state.fatalError) { els.errorBox.hidden = true; return; }
+    els.errorBox.hidden = false;
+    var msg = state.fatalError && state.fatalError.message ? state.fatalError.message : '未知错误';
+    els.errorText.textContent = '读取本地数据失败：' + msg +
+      '。你可以「重试」，或「清除本地数据并重试」后重新开始。';
+  }
+
+  function applyPendingFocus() {
+    if (!pendingFocus) return;
+    var p = pendingFocus;
+    pendingFocus = null;
+    var el = null;
+    if (p.id) {
+      var li = els.list.querySelector('li[data-id="' + p.id + '"]');
+      if (li) el = li.querySelector(p.kind === 'delete' ? '.del' : 'input[type="checkbox"]');
+    }
+    if (el) { el.focus(); return; }
+    if (p.fallback && document.contains(p.fallback)) p.fallback.focus();
+  }
+
+  function render() {
+    els.loading.hidden = !state.loading;
+    renderError();
+    renderList();
+    renderCount();
+    renderEmpty();
+    renderNotice();
+    renderMode();
+    renderChips();
+    applyPendingFocus();
+  }
+
+  /* ---------------- 业务动作 ---------------- */
+  function addTask(rawText) {
+    var text = String(rawText).trim();
+    if (!text) return false;
+    if (text.length > MAX_LEN) text = text.slice(0, MAX_LEN);
+    state.tasks.push({ id: uid(), text: text, done: false, createdAt: Date.now() });
+    persist();
+    render();
+    return true;
+  }
+
+  function toggleTask(id) {
+    var t = findTask(id);
+    if (!t) return;
+    t.done = !t.done;
+    pendingFocus = { id: id, kind: 'checkbox', fallback: activeChipEl() };
+    persist();
+    render();
+    showToast(t.done ? ('已完成：' + clip(t.text, 14)) : ('已恢复未完成：' + clip(t.text, 14)), false);
+  }
+
+  function deleteTask(id) {
+    for (var i = 0; i < state.tasks.length; i++) {
+      if (state.tasks[i].id === id) {
+        var task = state.tasks[i];
+        undoState = { type: 'delete', task: task, index: i };
+        state.tasks.splice(i, 1);
+        persist();
+        render();
+        showToast('已删除「' + clip(task.text, 12) + '」', true);
+        return;
+      }
+    }
+  }
+
+  function activeChipEl() {
+    for (var i = 0; i < els.chips.length; i++) {
+      if (els.chips[i].getAttribute('data-filter') === state.filter) return els.chips[i];
+    }
+    return els.chips[0];
+  }
+
+  /* ---------------- 事件绑定 ---------------- */
+  els.form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var ok = addTask(els.input.value);
+    if (!ok) { showHint('请输入任务内容'); els.input.focus(); return; }
+    els.input.value = '';
+    els.hint.textContent = '';
+    els.input.classList.remove('invalid');
+    els.input.focus();
+  });
+
+  els.input.addEventListener('input', function () {
+    if (els.input.value.trim() !== '') {
+      els.hint.textContent = '';
+      els.input.classList.remove('invalid');
+    }
+  });
+
+  els.chips.forEach(function (c) {
+    c.addEventListener('click', function () {
+      state.filter = c.getAttribute('data-filter');
+      render();
+    });
+  });
+
+  els.retryBtn.addEventListener('click', function () { boot(); });
+
+  els.resetBtn.addEventListener('click', function () {
+    storage.clear();
+    undoState = null;
+    boot();
+    showToast('已清除本地数据', false);
+  });
+
+  els.seedBtn.addEventListener('click', function () {
+    var added = 0;
+    SEED_TASKS.forEach(function (s) {
+      var exists = state.tasks.some(function (t) { return t.text === s.text; });
+      if (!exists) {
+        state.tasks.push({ id: uid(), text: s.text, done: s.done, createdAt: Date.now() });
+        added++;
+      }
+    });
+    persist();
+    render();
+    showToast(added > 0 ? ('已载入 ' + added + ' 条虚构示例数据') : '示例数据已存在，未重复载入', false);
+  });
+
+  els.failBtn.addEventListener('click', function () {
+    storage.forceMemory(new Error('模拟：写入被浏览器拒绝（演示用）'));
+    degradeAnnounced = true;
+    render();
+    showToast('已模拟存储写入失败，当前为内存模式', false);
+  });
+
+  els.recoverBtn.addEventListener('click', function () {
+    if (storage.probe()) {
+      var res = storage.read();
+      state.fatalError = null;
+      if (res.ok) state.tasks = res.data || [];
+      degradeAnnounced = false;
+      render();
+      showToast('已恢复本地存储模式', false);
+    } else {
+      render();
+      showToast('仍无法使用本地存储，继续内存模式', false);
+    }
+  });
+
+  els.clearBtn.addEventListener('click', function () {
+    if (state.tasks.length === 0) { showToast('当前没有任务', false); return; }
+    undoState = { type: 'clear', tasks: state.tasks.slice() };
+    state.tasks = [];
+    persist();
+    render();
+    showToast('已清空全部任务', true);
+  });
+
+  els.undoBtn.addEventListener('click', function () {
+    if (!undoState) { els.toast.hidden = true; return; }
+    if (undoState.type === 'delete') {
+      var i = Math.min(Math.max(undoState.index, 0), state.tasks.length);
+      state.tasks.splice(i, 0, undoState.task);
+    } else if (undoState.type === 'clear') {
+      state.tasks = undoState.tasks.slice();
+    }
+    undoState = null;
+    state.filter = 'all';
+    persist();
+    render();
+    els.toast.hidden = true;
+    els.input.focus();
+  });
+
+  /* ---------------- 启动（模拟读取延迟，无网络请求） ---------------- */
+  function boot() {
+    state.loading = true;
+    state.fatalError = null;
+    render();
+    window.setTimeout(function () {
+      var res;
+      try {
+        res = storage.read();
+      } catch (e) {
+        res = { ok: false, error: e };
+      }
+      if (res.ok) {
+        state.tasks = res.data || [];
+      } else {
+        state.tasks = [];
+        state.fatalError = res.error || new Error('无法读取本地数据');
+      }
+      state.loading = false;
+      render();
+    }, 420);
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>

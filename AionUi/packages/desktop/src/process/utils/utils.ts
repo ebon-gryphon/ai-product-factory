@@ -42,6 +42,11 @@ export const getTempPath = () => {
  * CLI 工具如 Qwen 无法正确处理路径中的空格。
  */
 const ensureCliSafeSymlink = (targetPath: string, symlinkName: string): string => {
+  // E2E instances must never repoint a live app's shared home-directory links.
+  // Their isolated userData directories are disposable when the worker exits.
+  if (process.env.AIONUI_E2E_TEST === '1') {
+    return targetPath;
+  }
   // Only needed when the platform explicitly requires CLI-safe symlinks
   // (Electron on macOS, where userData lives under "Application Support" which contains spaces)
   if (!getPlatformServices().paths.needsCliSafeSymlinks()) {

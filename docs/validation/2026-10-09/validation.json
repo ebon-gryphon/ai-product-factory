@@ -1,0 +1,231 @@
+{
+  "verified_at": "2026-10-09T07:03:57.045819+00:00",
+  "scope": "真实模型四工序生成闭环及原型验证；不代表正式业务系统已实现或已上线。",
+  "projects": [
+    {
+      "provider": "mimo",
+      "model": {
+        "provider_id": "1c40994f",
+        "model": "mimo-v2.5",
+        "use_model": null
+      },
+      "id": "01a11e7f-a503-70a2-9382-0e708bb770b1",
+      "revision": 26,
+      "human_approved_stages": 0,
+      "stages": [
+        {
+          "status": "review",
+          "conversation_id": "48155fd0",
+          "error": null,
+          "version_id": "01a11e80-37d6-73b0-8bce-f86d2f1ca014",
+          "source": "ai",
+          "based_on": []
+        },
+        {
+          "status": "review",
+          "conversation_id": "2678056f",
+          "error": null,
+          "version_id": "01a11e88-69ee-7e12-811c-5a3ddd7420fb",
+          "source": "ai",
+          "based_on": [
+            "01a11e80-37d6-73b0-8bce-f86d2f1ca014"
+          ]
+        },
+        {
+          "status": "review",
+          "conversation_id": "c8976235",
+          "error": null,
+          "version_id": "01a11e8e-e6b5-7073-943e-92a852acf357",
+          "source": "ai",
+          "based_on": [
+            "01a11e80-37d6-73b0-8bce-f86d2f1ca014",
+            "01a11e88-69ee-7e12-811c-5a3ddd7420fb"
+          ]
+        },
+        {
+          "status": "review",
+          "conversation_id": "bfcf09c5",
+          "error": null,
+          "version_id": "01a11ee7-2530-7193-a5a9-9f29cde852d7",
+          "source": "ai",
+          "based_on": [
+            "01a11e80-37d6-73b0-8bce-f86d2f1ca014",
+            "01a11e88-69ee-7e12-811c-5a3ddd7420fb",
+            "01a11e8e-e6b5-7073-943e-92a852acf357"
+          ]
+        }
+      ]
+    },
+    {
+      "provider": "deepseek",
+      "model": {
+        "provider_id": "73779174",
+        "model": "deepseek-flash",
+        "use_model": null
+      },
+      "id": "01a11e7f-a4fb-7702-8345-60f5bd7673c2",
+      "revision": 22,
+      "human_approved_stages": 0,
+      "stages": [
+        {
+          "status": "review",
+          "conversation_id": "43a948ad",
+          "error": null,
+          "version_id": "01a11e83-39f0-7990-b844-617886cb62b5",
+          "source": "ai",
+          "based_on": []
+        },
+        {
+          "status": "review",
+          "conversation_id": "46e13b2b",
+          "error": null,
+          "version_id": "01a11e9a-a828-7971-901d-f2c8c13595f7",
+          "source": "ai",
+          "based_on": [
+            "01a11e83-39f0-7990-b844-617886cb62b5"
+          ]
+        },
+        {
+          "status": "review",
+          "conversation_id": "2f8a4120",
+          "error": null,
+          "version_id": "01a11ee6-357d-7ab0-8b42-e5337acf3723",
+          "source": "ai",
+          "based_on": [
+            "01a11e83-39f0-7990-b844-617886cb62b5",
+            "01a11e9a-a828-7971-901d-f2c8c13595f7"
+          ]
+        },
+        {
+          "status": "failed",
+          "conversation_id": "7c482d43",
+          "error": "FACTORY_EXECUTION_FAILED",
+          "version_id": null,
+          "source": null,
+          "based_on": null
+        }
+      ]
+    }
+  ],
+  "independent_browser_checks": {
+    "mimo": {
+      "checks_passed": [
+        "添加任务",
+        "标记完成与筛选",
+        "删除任务",
+        "刷新后任务及完成状态保留",
+        "存储失败时回退内存",
+        "HTML 标签按纯文本显示",
+        "360px 无横向溢出",
+        "真实禁止存储的 iframe 中仍可添加任务"
+      ],
+      "html_sha256": "4d7e7869119802831e4d74e82eb8313108470e0d6d107a52d081990f12ca51cb",
+      "mobile_viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "screenshot": "mimo-mobile.jpg"
+    },
+    "deepseek": {
+      "checks_passed": [
+        "添加任务",
+        "标记完成与筛选",
+        "删除任务",
+        "刷新后任务及完成状态保留",
+        "存储失败时回退内存",
+        "HTML 标签按纯文本显示",
+        "360px 无横向溢出",
+        "真实禁止存储的 iframe 中仍可添加任务"
+      ],
+      "html_sha256": "d0be9f97cd11cb0054f8d20a6fb72bff0ad8cc047fa3b8a0b69ae16a4480684c",
+      "mobile_viewport": {
+        "width": 360,
+        "height": 800
+      },
+      "screenshot": "deepseek-mobile.jpg"
+    }
+  },
+  "desktop_checks": [
+    "正常开发应用中 DeepSeek 原型成功添加任务，见 desktop-preview.png",
+    "MiMo 完整项目通过原生保存对话框导出 JSON，并与 API 持久化结果逐字段比较一致",
+    "E2E 运行前后正常开发实例的 data/config 链接保持指向 AIFactory-Dev，项目 API 仍可访问"
+  ],
+  "repairs": [
+    {
+      "issue": "等待工具授权时入口可能打开已选择的旧工序会话",
+      "fix": "提示等待状态并提供正在执行的会话入口",
+      "test": "production permission warning opens the running stage rather than the selected stage"
+    },
+    {
+      "issue": "DeepSeek 原型使用 submit 事件，allow-scripts 沙箱禁止本地表单交互",
+      "fix": "添加 allow-forms；仍不允许 same-origin，CSP form-action none 和 connect-src none 保留",
+      "test": "真实原型隔离预览交互 + production projects persist artifacts and invalidate downstream revisions"
+    },
+    {
+      "issue": "macOS E2E 改写正常应用共享的 ~/.aionui-dev 和配置链接，清理测试目录后会话保存失败、数据库访问失败",
+      "fix": "E2E 直接使用隔离 userData 路径，不创建或重指向共享 home 链接；重启恢复正常实例链接",
+      "test": "3 项 e2ePathIsolation 单元测试 + 7 项真实桌面 E2E；之后 MiMo 完成四工序、DeepSeek 恢复第三工序；DeepSeek 最后工序另遇上游流中断"
+    }
+  ],
+  "failures_retained": [
+    {
+      "provider": "mimo",
+      "conversation_id": "fb47edde",
+      "error": "USER_LLM_PROVIDER_NETWORK_ERROR",
+      "detail": "provider request failed; recovered by later stage-only retry"
+    },
+    {
+      "conversations": [
+        "51bd6b46",
+        "851b550a",
+        "178ab515",
+        "18220a16"
+      ],
+      "error": "会话保存 / 文件访问异常",
+      "cause": "E2E shared symlink collision",
+      "resolution": "fixed E2E path isolation and retried only unfinished stages"
+    },
+    {
+      "provider": "deepseek",
+      "conversation_id": "7c482d43",
+      "error": "UNKNOWN_UPSTREAM_ERROR",
+      "diagnostic": {
+        "http_status": 200,
+        "termination": "connection_error",
+        "done_seen": false,
+        "finish_reason": "missing",
+        "incomplete_stream": true
+      },
+      "resolution": "未归档为成功成果，保留 failed 状态；工作目录中的报告仅为草稿。"
+    }
+  ],
+  "automated_checks": {
+    "desktop_e2e": {
+      "passed": 7,
+      "log": "/tmp/factory-isolated-e2e.log"
+    },
+    "path_isolation_unit": {
+      "passed": 3,
+      "log": "/tmp/factory-isolation-unit.log"
+    },
+    "typescript": "pass",
+    "i18n": "pass",
+    "production_build": "pass; existing chunk-size warnings",
+    "lint": "0 errors; 16 warnings in expanded utility/E2E scope"
+  },
+  "limitations": [
+    "所有工序保留待人工验收，未代替用户批准交付",
+    "两份成果的开发工序只生成任务拆解；并未完成正式产品实现或上线",
+    "模型生成的验收报告主要使用 Node 最小 DOM 桩，独立真实浏览器证据另列",
+    "MiMo 需求正文已保存在应用版本中，但模型声称写入的 01_MVP需求文档.md 实际未落盘，报告保留该缺陷",
+    "360px 与桌面窗口已验证；320px、其他浏览器、真机触屏和读屏未完成验证",
+    "仅验证本轮合成待办项目，未开展长时间稳定性或负载测试",
+    "DeepSeek 将测试标题中的模型 API 联调误读为待办应用的后端 API 联调；该判断不代表工厂模型 API 未连通，原始报告保留供人工审阅。"
+  ],
+  "icon": "保留原有战车工厂素材，未修改图标文件",
+  "outcome": {
+    "mimo": "4/4 工序已生成并保存，待人工验收",
+    "deepseek": "3/4 工序已生成并保存；第 4 工序回复流中断，保留失败状态，未算作完成"
+  },
+  "desktop_overview": "factory-overview.png"
+}

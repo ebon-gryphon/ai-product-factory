@@ -673,6 +673,9 @@ const GuidPage: React.FC = () => {
             <span className={styles.factoryEyebrow}>{t('guid.factory.eyebrow')}</span>
             <h1>{t('guid.factory.title')}</h1>
             <p>{t('guid.factory.subtitle')}</p>
+            <Button type='primary' onClick={() => navigate('/factory')}>
+              {t('guid.production.open')}
+            </Button>
           </header>
           <FactoryLaunchpad
             disabled={guidInput.loading}

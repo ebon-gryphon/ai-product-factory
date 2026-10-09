@@ -30,6 +30,7 @@ use tokio::sync::Notify;
 
 pub struct AppServices {
     pub database: Database,
+    pub factory_service: Arc<aionui_factory::FactoryService>,
     pub jwt_service: Arc<JwtService>,
     pub user_repo: Arc<dyn IUserRepository>,
     pub cookie_config: Arc<CookieConfig>,
@@ -135,6 +136,15 @@ impl AppServices {
             project_service: self.project_service.clone(),
             user_order_store: self.user_order_store.clone(),
         });
+        self.factory_service = Arc::new(aionui_factory::FactoryService::new(
+            Arc::new(aionui_db::SqliteFactoryRepository::new(self.database.pool().clone())),
+            Arc::new(crate::router::factory_adapter::FactoryConversationRunner {
+                work_dir: self.work_dir.clone(),
+                service: self.conversation_service.clone(),
+                repository: self.conversation_repo.clone(),
+                tasks: self.worker_task_manager.clone(),
+            }),
+        ));
         self
     }
 
@@ -406,6 +416,17 @@ impl AppServices {
             user_order_store: user_order_store.clone(),
         });
 
+        let factory_service = Arc::new(aionui_factory::FactoryService::new(
+            Arc::new(aionui_db::SqliteFactoryRepository::new(database.pool().clone())),
+            Arc::new(crate::router::factory_adapter::FactoryConversationRunner {
+                work_dir: work_dir.clone(),
+                service: conversation_service.clone(),
+                repository: conversation_repo.clone(),
+                tasks: worker_task_manager.clone(),
+            }),
+        ));
+        factory_service.recover().await?;
+
         let session_message_queue = Arc::new(DeliveryQueue::new(Arc::new(SystemClock)));
         let session_message_notify = Arc::new(Notify::new());
         let session_message_service = Arc::new(SessionMessageService::new(SessionMessageDeps {
@@ -425,6 +446,7 @@ impl AppServices {
             .with_turn_cancelled_hook(Arc::new(QueueClearingCancelHook::new(session_message_queue.clone())));
 
         Ok(Self {
+            factory_service,
             database,
             jwt_service: Arc::new(JwtService::new(secret.clone())),
             antigravity_hook_tokens,

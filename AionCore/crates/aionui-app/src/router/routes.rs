@@ -277,6 +277,10 @@ pub fn create_router_with_all_state(services: &AppServices, states: ModuleStates
     };
 
     // System routes protected by auth middleware
+    let factory_authenticated = aionui_factory::factory_routes(aionui_factory::FactoryRouterState {
+        service: services.factory_service.clone(),
+    })
+    .route_layer(from_fn_with_state(auth_mw_state.clone(), auth_middleware));
     let system_authenticated =
         system_routes(states.system).route_layer(from_fn_with_state(auth_mw_state.clone(), auth_middleware));
 
@@ -400,6 +404,7 @@ pub fn create_router_with_all_state(services: &AppServices, states: ModuleStates
         .route("/health", get(health_check))
         .merge(auth_routes(auth_state))
         .merge(system_authenticated)
+        .merge(factory_authenticated)
         .merge(conversation_authenticated)
         .merge(conversation_ops_authenticated)
         .merge(remote_agent_authenticated)
