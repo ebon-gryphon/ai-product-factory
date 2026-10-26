@@ -1,23 +1,28 @@
 import React, { useState } from 'react';
-import { Alert, Button, Input, Select, Modal } from '@arco-design/web-react';
+import { Alert, Button, Input, Select, Modal, Collapse } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { download, isolatedPreview, prototypeHtml } from './artifacts';
 import type { Project, Action } from './types';
 import styles from './Factory.module.css';
+import ReaEvidence from './ReaEvidence';
 type Props = { project: Project; stage: number; busy: boolean; onAction: (action: Action) => Promise<void> };
 export default function ArtifactPanel({ project, stage, busy, onAction }: Props): React.JSX.Element {
   const { t } = useTranslation();
   const current = project.stages[stage];
   const latest = current.versions.at(-1);
+  const evidenceReadOnly = project.workflow === 'rea' && stage < 2;
   const draftKey = `factory.draft.${project.id}.${stage}.${latest?.id || 'empty'}`;
-  const [draft, setDraft] = useState(() => sessionStorage.getItem(draftKey) ?? latest?.content ?? '');
+  const [draft, setDraft] = useState(() =>
+    evidenceReadOnly ? (latest?.content ?? '') : (sessionStorage.getItem(draftKey) ?? latest?.content ?? '')
+  );
   const [version, setVersion] = useState(latest?.id || '');
   const [preview, setPreview] = useState(false);
   const shown = current.versions.find((v) => v.id === version);
   const historical = Boolean(shown && shown.id !== latest?.id);
-  const html = prototypeHtml(historical ? shown?.content || '' : draft);
+  const html = evidenceReadOnly ? null : prototypeHtml(historical ? shown?.content || '' : draft);
   const disabled = busy || Boolean(project.run_id) || project.archived;
   const change = (value: string): void => {
+    if (evidenceReadOnly) return;
     setDraft(value);
     sessionStorage.setItem(draftKey, value);
   };
@@ -34,7 +39,7 @@ export default function ArtifactPanel({ project, stage, busy, onAction }: Props)
             label: `v${i + 1} · ${new Date(v.created_at).toLocaleString()}`,
           }))}
         />
-        {historical && (
+        {historical && !evidenceReadOnly && (
           <Button
             disabled={disabled}
             onClick={() => {
@@ -81,7 +86,18 @@ export default function ArtifactPanel({ project, stage, busy, onAction }: Props)
           />
         </>
       )}
-      {historical ? (
+      {evidenceReadOnly ? (
+        <>
+          {(shown || latest) && (
+            <ReaEvidence key={(shown || latest)!.id} artifact={(shown || latest)!} projectId={project.id} />
+          )}
+          <Collapse>
+            <Collapse.Item name='raw-summary' header={t('guid.rea.viewSummary')}>
+              <pre className={styles.content}>{historical ? shown?.content : draft}</pre>
+            </Collapse.Item>
+          </Collapse>
+        </>
+      ) : historical ? (
         <pre className={styles.content}>{shown?.content}</pre>
       ) : (
         <Input.TextArea
@@ -92,8 +108,10 @@ export default function ArtifactPanel({ project, stage, busy, onAction }: Props)
           onChange={change}
         />
       )}
-      <p className={styles.muted}>{t('guid.production.invalidateHint')}</p>
-      {!historical && (
+      <p className={styles.muted}>
+        {evidenceReadOnly ? t('guid.rea.evidenceReadOnlyHint') : t('guid.production.invalidateHint')}
+      </p>
+      {!historical && !evidenceReadOnly && (
         <Button
           disabled={disabled || !draft.trim() || draft === latest?.content}
           onClick={() => {

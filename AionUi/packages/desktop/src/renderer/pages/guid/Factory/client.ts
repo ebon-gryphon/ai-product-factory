@@ -1,6 +1,6 @@
 import { getBaseUrl, resolveCoreCsrfToken } from '@/common/adapter/httpBridge';
 import { refreshSession } from '@/common/adapter/sessionRefresh';
-import type { Action, Project, ProjectInput, Assistant, ModelOption } from './types';
+import type { Action, Project, ProjectInput, Assistant, ModelOption, ReaStatus } from './types';
 
 async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   const csrf =
@@ -43,3 +43,21 @@ export const models = (): Promise<ModelOption[]> => request('/api/model-bench/mo
 
 export const confirmations = (id: string): Promise<{ id: string }[]> =>
   request(`/api/conversations/${encodeURIComponent(id)}/confirmations`);
+
+export const reaStatus = (): Promise<ReaStatus> => request('/api/factory/rea/status');
+
+/** Fetch authenticated evidence bytes; a missing or changed source must remain an error. */
+export async function evidence(projectId: string, versionId: string): Promise<Blob> {
+  const url = `${getBaseUrl()}/api/factory/projects/${encodeURIComponent(projectId)}/rea-evidence/${encodeURIComponent(versionId)}`;
+  const init = { credentials: 'same-origin' as const };
+  let response = await fetch(url, init);
+  if (response.status === 401) {
+    await refreshSession();
+    response = await fetch(url, init);
+  }
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText.match(/FACTORY_[A-Z_]+/)?.[0] || `FACTORY_HTTP_${response.status}`);
+  }
+  return response.blob();
+}

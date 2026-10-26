@@ -1,0 +1,67 @@
+{
+  "verified_at": "2026-10-09T19:18:05.688919+08:00",
+  "scope": "Real application conversations: model response and tool execution; not full production pipeline validation for every engine.",
+  "results": [
+    {
+      "name": "Codex",
+      "conversation_id": "42177df3",
+      "model": null,
+      "runtime": "idle",
+      "file": "<USER_HOME>/Library/Application Support/AIFactory-Dev/aionui/work/factory-engine-validation/codex/engine-check.txt",
+      "file_content": "FACTORY_ENGINE_OK\n17+25=42\n",
+      "final_response": "```text\nFACTORY_ENGINE_OK\n17+25=42\n```",
+      "completed_tool_events": 2
+    },
+    {
+      "name": "Pi",
+      "conversation_id": "89d4cf97",
+      "model": "factory-mimo/mimo-v2.5",
+      "runtime": "idle",
+      "file": "<USER_HOME>/Library/Application Support/AIFactory-Dev/aionui/work/factory-engine-validation/pi/engine-check.txt",
+      "file_content": "FACTORY_ENGINE_OK\n17+25=42\n",
+      "final_response": "已创建并读回 `engine-check.txt`，实际内容为：\n\n```\nFACTORY_ENGINE_OK\n17+25=42\n```",
+      "completed_tool_events": 2
+    },
+    {
+      "name": "生产助手",
+      "conversation_id": "16ae7fc7",
+      "model": {
+        "provider_id": "1c40994f",
+        "model": "mimo-v2.5",
+        "use_model": null
+      },
+      "runtime": "idle",
+      "file": "<USER_HOME>/Library/Application Support/AIFactory-Dev/aionui/work/factory-engine-validation/butler/engine-check.txt",
+      "file_content": "FACTORY_ENGINE_OK\n17+25=42\n",
+      "final_response": "已创建并读回 `engine-check.txt`，实际内容为：\n\n```\nFACTORY_ENGINE_OK\n17+25=42\n```",
+      "completed_tool_events": 2
+    },
+    {
+      "name": "Pi DeepSeek",
+      "conversation_id": "cb3cebc0",
+      "model": "factory-deepseek/deepseek-flash",
+      "runtime": "idle",
+      "file": "<USER_HOME>/Library/Application Support/AIFactory-Dev/aionui/work/factory-engine-validation/pi-deepseek/engine-check.txt",
+      "file_content": "FACTORY_ENGINE_OK\n17+25=42\n",
+      "final_response": "已创建并读回 `engine-check.txt`，实际内容为：\n\n```\nFACTORY_ENGINE_OK\n17+25=42\n```",
+      "completed_tool_events": 2
+    }
+  ],
+  "configuration": {
+    "pi": "Added factory-mimo and factory-deepseek providers to ~/.pi/agent/models.json (0600); default factory-mimo/mimo-v2.5. Existing providers retained.",
+    "production_assistant": "Default model mimo-v2.5; Aion engine and existing skills retained.",
+    "codex": "Existing ChatGPT login retained. App-specific HTTP_PROXY and HTTPS_PROXY set to existing system proxy <LOCAL_PROXY>; NO_PROXY covers localhost. No API credentials copied to Codex.",
+    "credentials": "No credentials included in this report. Pi local config holds copies of the two already-configured API credentials; future key changes must also update Pi.",
+    "limitations": [
+      "Codex initially timed out without proxy; retry passed after proxy configuration.",
+      "Codex CLI 0.160.1 is newer than app verified baseline 0.151.0; tested file write/read, not all CLI capabilities.",
+      "Pi context/output limits set conservatively to 128000/8192; reasoning disabled for compatibility.",
+      "Production assistant Read tool returned cached/unchanged notice; file content independently verified from disk."
+    ]
+  },
+  "evidence_sources": [
+    "<LOCAL_LOG_DIR>/ai-factory-isolated-live.log",
+    "/api/conversations/{id}/messages",
+    "<USER_HOME>/.local/node-v24.20.0/lib/node_modules/@earendil-works/pi-coding-agent/docs/models.md"
+  ]
+}

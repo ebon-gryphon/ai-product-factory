@@ -1,0 +1,17 @@
+Publication copy: local filesystem paths use placeholders; test results are unchanged.
+
+Captured verbatim from tool exec session 80073 (final affected-check run).
+Session final exit_code: 0. This is a transcript export; tests were not rerun.
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.76s
+   Doc-tests aionui_app
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests aionui_factory
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

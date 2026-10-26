@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LayoutContext } from '@/renderer/hooks/context/LayoutContext';
@@ -451,6 +451,20 @@ describe('GuidPage', () => {
     expect(latestGuidInputCardProps).not.toHaveProperty('mentionOpen');
     expect(latestGuidInputCardProps).not.toHaveProperty('mentionSelectorBadge');
     expect(latestGuidInputCardProps).not.toHaveProperty('mentionDropdown');
+  });
+
+  it('replaces the input with the selected factory prompt without changing attachments or sending', () => {
+    render(<GuidPage />);
+    guidInputMock.setInput.mockClear();
+    guidInputMock.setFiles.mockClear();
+    sendMock.handleSend.mockClear();
+
+    for (const stage of ['requirements', 'content', 'content', 'research', 'review']) {
+      fireEvent.click(screen.getByRole('button', { name: new RegExp(`guid.factory.${stage}.title`) }));
+      expect(guidInputMock.setInput).toHaveBeenLastCalledWith(`guid.factory.${stage}.prompt`);
+    }
+    expect(guidInputMock.setFiles).not.toHaveBeenCalled();
+    expect(sendMock.handleSend).not.toHaveBeenCalled();
   });
 
   it('ignores legacy selectedAgentKey navigation state when preselecting an assistant', () => {

@@ -1,19 +1,28 @@
 import React, { useState } from 'react';
 import { Button, Input, Select, Alert } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
-import type { ProjectInput, Assistant, ModelOption } from './types';
+import type { ProjectInput, Assistant, ModelOption, Workflow } from './types';
 import styles from './Factory.module.css';
 type Props = {
   initial?: ProjectInput;
+  workflow?: Workflow;
   assistants: Assistant[];
   models: ModelOption[];
   busy: boolean;
   onSave: (value: ProjectInput) => Promise<void>;
 };
-export default function ProjectForm({ initial, assistants, models, busy, onSave }: Props): React.JSX.Element {
+export default function ProjectForm({
+  initial,
+  workflow = 'production',
+  assistants,
+  models,
+  busy,
+  onSave,
+}: Props): React.JSX.Element {
   const { t, i18n } = useTranslation();
+  const isRea = workflow === 'rea';
   const [value, setValue] = useState<ProjectInput>(
-    initial || { name: '', brief: '', assistant_id: '', workspace: '', model: null }
+    initial || { name: '', brief: '', assistant_id: '', workspace: '', model: null, workflow, target_path: '' }
   );
   const set = (key: keyof ProjectInput, text: string): void => setValue((old) => ({ ...old, [key]: text }));
   return (
@@ -22,15 +31,29 @@ export default function ProjectForm({ initial, assistants, models, busy, onSave 
         {t('guid.production.name')}
         <Input value={value.name} maxLength={100} onChange={(v) => set('name', v)} />
       </label>
+      {isRea && (
+        <label className={styles.label}>
+          {t('guid.rea.targetPath')}
+          <Input
+            value={value.target_path || ''}
+            placeholder={t('guid.rea.targetPlaceholder')}
+            maxLength={4096}
+            onChange={(v) => set('target_path', v)}
+          />
+          <span className={styles.muted}>{t('guid.rea.targetHint')}</span>
+        </label>
+      )}
       <label className={styles.label}>
-        {t('guid.production.brief')}
+        {isRea ? t('guid.rea.brief') : t('guid.production.brief')}
         <Input.TextArea
           value={value.brief}
+          placeholder={isRea ? t('guid.rea.questionExample') : undefined}
           maxLength={10000}
           autoSize={{ minRows: 5, maxRows: 12 }}
           onChange={(v) => set('brief', v)}
         />
       </label>
+      {isRea && <Alert type='info' content={t('guid.rea.questionHint')} />}
       <label className={styles.label}>
         {t('guid.production.assistant')}
         <Select
@@ -62,13 +85,13 @@ export default function ProjectForm({ initial, assistants, models, busy, onSave 
         {t('guid.production.workspace')}
         <Input value={value.workspace} onChange={(v) => set('workspace', v)} />
       </label>
-      <Alert type='info' content={t('guid.production.credentialsHint')} />
+      <Alert type='info' content={isRea ? t('guid.rea.credentialsHint') : t('guid.production.credentialsHint')} />
       <Button
         type='primary'
         loading={busy}
-        disabled={!value.name.trim() || !value.brief.trim()}
+        disabled={!value.name.trim() || !value.brief.trim() || (isRea && !value.target_path?.trim())}
         onClick={() => {
-          void onSave(value);
+          void onSave({ ...value, workflow });
         }}
       >
         {t('guid.production.saveProject')}

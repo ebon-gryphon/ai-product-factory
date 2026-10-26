@@ -1,7 +1,6 @@
 import classNames from 'classnames';
 import { Button, Tooltip } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
-import { Experiment, FactoryBuilding } from '@icon-park/react';
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { usePreviewContext } from '@renderer/pages/conversation/Preview/context/PreviewContext';
@@ -14,6 +13,9 @@ import { SiderToolbar, SiderSearchEntry, SiderScheduledEntry, SiderAssistantEntr
 import SiderFooter from './SiderFooter';
 import TeamSiderSection from './TeamSiderSection';
 import siderStyles from './Sider.module.css';
+import sovietWarFactory from '@renderer/assets/logos/brand/app.png';
+import alliedServiceDepot from '@renderer/assets/logos/brand/allied-service-depot.png';
+import alliedBattleLab from '@renderer/assets/logos/brand/allied-battle-lab.png';
 
 const WorkspaceGroupedHistory = React.lazy(() => import('@renderer/pages/conversation/GroupedHistory'));
 const SettingsSider = React.lazy(() => import('@renderer/pages/settings/components/SettingsSider'));
@@ -213,9 +215,16 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
               onClick={handleAssistantClick}
             />
             <Button
-              icon={<FactoryBuilding size={18} />}
+              icon={
+                <img
+                  className={classNames(siderStyles.buildingIcon, siderStyles.factoryIcon)}
+                  src={sovietWarFactory}
+                  alt=''
+                  aria-hidden='true'
+                />
+              }
               type={pathname === '/factory' ? 'secondary' : 'text'}
-              className='w-full min-h-34px text-t-primary'
+              className={classNames('w-full min-h-34px text-t-primary', siderStyles.buildingNav)}
               aria-label={t('guid.production.title')}
               onClick={() => {
                 void navigate('/factory');
@@ -224,13 +233,25 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
             >
               {!collapsed && t('guid.production.title')}
             </Button>
+            <Button
+              icon={<img className={siderStyles.buildingIcon} src={alliedServiceDepot} alt='' aria-hidden='true' />}
+              type={pathname === '/factory-rea' ? 'secondary' : 'text'}
+              className={classNames('w-full min-h-34px text-t-primary', siderStyles.buildingNav)}
+              aria-label={t('guid.rea.title')}
+              onClick={() => {
+                void navigate('/factory-rea');
+                onSessionClick?.();
+              }}
+            >
+              {!collapsed && t('guid.rea.title')}
+            </Button>
             {/* Scheduled tasks nav entry - fixed above scroll */}
             <Tooltip content={t('common.modelBench.title')} position='right'>
               <Button
                 type={pathname === '/model-bench' ? 'secondary' : 'text'}
-                className='w-full min-h-34px text-t-primary'
+                className={classNames('w-full min-h-34px text-t-primary', siderStyles.buildingNav)}
                 aria-label={t('common.modelBench.title')}
-                icon={<Experiment size={18} />}
+                icon={<img className={siderStyles.buildingIcon} src={alliedBattleLab} alt='' aria-hidden='true' />}
                 onClick={() => {
                   cleanupSiderTooltips();
                   blurActiveElement();

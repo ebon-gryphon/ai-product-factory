@@ -1,0 +1,200 @@
+{
+  "date": "2026-10-21",
+  "implementation": {
+    "repository": "https://github.com/morluto/rea",
+    "version": "6.7.0",
+    "targetTypes": ["local JavaScript/Electron application directory", "ASAR"],
+    "workflow": [
+      "application overview",
+      "trace a selected observed node",
+      "AI evidence interpretation",
+      "reconstruction plan"
+    ],
+    "outOfScope": ["browser CDP integration", "native binary analysis", "dynamic target execution"]
+  },
+  "finalDesktop": {
+    "completeSuite": {
+      "passed": 13,
+      "failed": 0,
+      "log": "checks/desktop-complete.txt"
+    },
+    "reaRepeat": {
+      "cases": 6,
+      "repetitions": 2,
+      "passed": 12,
+      "failed": 0,
+      "log": "checks/desktop-repeat.txt"
+    },
+    "readinessUiMocked": true,
+    "overviewAndTraceUseRealRea": true,
+    "backend": "real Rust HTTP backend",
+    "nativeDownloadsVerified": ["bytes", "SHA-256", "Evidence ID", "operation"],
+    "paidModelStagesExecuted": false
+  },
+  "frontend": {
+    "fullSuiteBeforeFinalHistoryPresentation": {
+      "passed": 5055,
+      "skipped": 5,
+      "filesPassed": 529,
+      "filesSkipped": 1
+    },
+    "finalFocused": {
+      "passed": 25,
+      "failed": 0,
+      "log": "checks/frontend-focused.txt"
+    },
+    "typescript": "passed",
+    "i18n": "passed (13 locales)",
+    "productionBuild": "passed",
+    "viewportWidths": [1280, 390],
+    "horizontalOverflow": false
+  },
+  "backendAffectedAfterStopFix": {
+    "workflowPassed": 19,
+    "adapterPassed": 8,
+    "httpPassed": 3,
+    "doctest": "passed (0 doctests in affected crates)",
+    "clippy": "passed",
+    "format": "passed",
+    "developmentBuild": "passed"
+  },
+  "cliSmoke": {
+    "overview": "cli-smoke.json",
+    "trace": "trace-smoke.json",
+    "traceNodes": 27,
+    "traceEdges": 38,
+    "matchedSeeds": 1
+  },
+  "resolvedIssues": [
+    "factory prompt cards accumulated text",
+    "stop rejected after background revision update",
+    "active stage lost when switching tabs",
+    "tool and model requirements described inconsistently",
+    "historical trace lacked its saved seed/direction/source",
+    "cancel-timeout guidance assumed every task had an AI conversation"
+  ],
+  "testHarnessCorrections": [
+    "use Electron native download event and verify actual saved bytes",
+    "wait for UI to display newly saved version before opening version history"
+  ],
+  "observedLimitations": [
+    "One desktop boot timeout did not reproduce in subsequent cold starts; cause unconfirmed.",
+    "Extended workspace run initially failed an unchanged Office no-listener timeout test; isolated full parallel and serial runs passed; port-reuse race remains an inference.",
+    "No paid-model output was exercised in this REA acceptance round."
+  ],
+  "evidenceNote": "Passing static sample analysis does not prove runtime behavior or completeness for arbitrary applications.",
+  "extendedBackendRegression": {
+    "originalWorkspace": {
+      "resultBlocks": 179,
+      "passed": 6693,
+      "failed": 1,
+      "ignored": 44,
+      "sourceLog": "<LOCAL_LOG_DIR>/ai-factory-core-workspace-tests.log",
+      "sourceLogSha256": "49eb27342041931fc4106ad8669c00115b1f5debf38ab08804fa95bddb192e55"
+    },
+    "remaining13PackagesIncludingOffice": {
+      "resultBlocks": 49,
+      "passed": 2829,
+      "failed": 0,
+      "ignored": 8,
+      "sourceLog": "<LOCAL_LOG_DIR>/ai-factory-core-workspace-remaining.log",
+      "sourceLogSha256": "3de7ce54f93d5fafeb622071087cab2441587d2e52d6ed972e33a2cf52ae41d4"
+    },
+    "allWorkspaceDoctests": {
+      "resultBlocks": 28,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 1,
+      "sourceLog": "<LOCAL_LOG_DIR>/ai-factory-core-workspace-doctests.log",
+      "sourceLogSha256": "9dd0a3445cedc090ff70b99f8611dd9d8e8dd932abca5925cc817530b04230e8"
+    },
+    "officeIndependentReruns": [
+      {
+        "mode": "parallel lib",
+        "passed": 104,
+        "failed": 0
+      },
+      {
+        "mode": "serial lib",
+        "passed": 104,
+        "failed": 0
+      },
+      {
+        "mode": "isolated previously failing case",
+        "passed": 1,
+        "failed": 0
+      }
+    ],
+    "note": "Separate runs; overlapping tests are not added together as a single all-green workspace run. The original unchanged Office failure remains recorded."
+  },
+  "deconstructionDeskFollowUp": {
+    "date": "2026-10-21",
+    "title": "拆解台",
+    "icon": "Red Alert 2 Allied Service Depot cameo",
+    "iconAsset": "AionUi/packages/desktop/src/renderer/assets/logos/brand/allied-service-depot.png",
+    "diagnosis": {
+      "existingBackendHealthHttpStatus": 200,
+      "existingBackendReaStatusHttpStatus": 404,
+      "localReaVersion": "6.7.0",
+      "cause": "The previously launched backend process does not expose the new REA endpoint; the renderer was hot-updated."
+    },
+    "fixes": [
+      "Explicit restart guidance for missing REA endpoint",
+      "Reject cached tool readiness after status request error",
+      "Block creation on unsupported backend",
+      "Inline alignment of sidebar icon"
+    ],
+    "checks": {
+      "focusedPassed": 27,
+      "desktopPassed": 6,
+      "typescript": "passed",
+      "i18n": "passed",
+      "productionBuild": "passed"
+    },
+    "logs": {
+      "focused": {
+        "source": "<LOCAL_LOG_DIR>/ai-factory-deconstruction-icon/final-focused.log",
+        "sha256": "69cb723e84809caecb7a8a0f811c3c8c290d64e594fa5ecd95250f8288b7cb2a",
+        "lastLines": [
+          " RUN  v4.1.0 <PROJECT_ROOT>/AionUi",
+          "",
+          "",
+          " Test Files  2 passed (2)",
+          "      Tests  27 passed (27)",
+          "   Start at  16:42:06",
+          "   Duration  3.83s (transform 94ms, setup 61ms, import 458ms, tests 2.91s, environment 362ms)",
+          ""
+        ]
+      },
+      "desktop": {
+        "source": "<LOCAL_LOG_DIR>/ai-factory-deconstruction-icon/final-e2e.log",
+        "sha256": "95f69683c6d0db472ee3511e0ad6682180515b66afa6858e83210d0a667edb21",
+        "lastLines": [
+          "  ✓  1 tests/e2e/specs/factory-rea.e2e.ts:193:7 › REA product deconstruction › scans, traces a real feature, downloads verifiable history and transfers saved findings (20.7s)",
+          "  ✓  2 tests/e2e/specs/factory-rea.e2e.ts:284:7 › REA product deconstruction › stops the active scan after a tab switch, retries and invalidates changed targets (14.4s)",
+          "  ✓  3 tests/e2e/specs/factory-rea.e2e.ts:327:7 › REA product deconstruction › traces an ASAR and retains its overview when the investigation question changes (13.8s)",
+          "  ✓  4 tests/e2e/specs/factory-rea.e2e.ts:380:9 › REA product deconstruction › shows an actionable failure for a missing directory without fabricating evidence (3.8s)",
+          "  ✓  5 tests/e2e/specs/factory-rea.e2e.ts:380:9 › REA product deconstruction › shows an actionable failure for a unsupported loose JavaScript file without fabricating evidence (3.9s)",
+          "  ✓  6 tests/e2e/specs/factory-rea.e2e.ts:393:7 › REA product deconstruction › explains mocked tool readiness failures and rechecks before enabling a scan (1.4s)",
+          "",
+          "  6 passed (59.1s)"
+        ]
+      },
+      "build": {
+        "source": "<LOCAL_LOG_DIR>/ai-factory-deconstruction-icon/final-build.log",
+        "sha256": "34bbd607f4f115d03b910d35614cab98d066869ed33103cd2b4e5a8f8b1e623e",
+        "lastLines": [
+          "../../../../out/renderer/assets/index-CnpIFeNm.js                         3,967.01 kB",
+          "../../../../out/renderer/assets/vendor-CcR_kwl9.js                        4,759.35 kB",
+          "",
+          "(!) Some chunks are larger than 1500 kB after minification. Consider:",
+          "- Using dynamic import() to code-split the application",
+          "- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks",
+          "- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.",
+          "✓ built in 15.02s"
+        ]
+      }
+    },
+    "visualThemeStatus": "Red Alert 2 direction selected for home and Deconstruction Desk; full reskin remains in discussion."
+  }
+}

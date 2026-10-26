@@ -1,0 +1,95 @@
+{
+  "id": "01a143b1-69af-7a32-93fd-adbe6b272728",
+  "name": "体验验收-原型格式与验收门槛-1016",
+  "brief": "手工测试夹具，用于验证原型识别和验收操作，不代表AI生成。",
+  "assistant_id": "",
+  "workspace": "",
+  "model": null,
+  "stages": [
+    {
+      "status": "approved",
+      "versions": [
+        {
+          "id": "01a143b1-69b5-7883-bed4-ed27a42fc643",
+          "content": "# 测试需求\n添加读书条目。",
+          "created_at": 1792137062837,
+          "source": "manual",
+          "conversation_id": null,
+          "based_on": []
+        }
+      ],
+      "conversation_id": null,
+      "error": null
+    },
+    {
+      "status": "approved",
+      "versions": [
+        {
+          "id": "01a143b1-69ba-7b43-b42b-cb1614b9622c",
+          "content": "<!doctype html><html lang=\"zh\"><meta charset=\"utf-8\"><body><h1>原型格式测试</h1><button onclick=\"this.textContent='点击成功'\">点击验证</button></body></html>",
+          "created_at": 1792137062842,
+          "source": "manual",
+          "conversation_id": null,
+          "based_on": [
+            "01a143b1-69b5-7883-bed4-ed27a42fc643"
+          ]
+        },
+        {
+          "id": "01a143b5-31d1-7c83-8670-75c9b9a177dd",
+          "content": "```html\n<!doctype html><html lang=\"zh\"><meta charset=\"utf-8\"><body><h1>原型格式测试</h1><button onclick=\"this.textContent='点击成功'\">点击验证</button></body></html>\n```",
+          "created_at": 1792137310673,
+          "source": "manual",
+          "conversation_id": null,
+          "based_on": [
+            "01a143b1-69b5-7883-bed4-ed27a42fc643"
+          ]
+        }
+      ],
+      "conversation_id": null,
+      "error": null
+    },
+    {
+      "status": "approved",
+      "versions": [
+        {
+          "id": "01a143b6-f454-7561-a787-e328a4aec2d8",
+          "content": "手工验收夹具，仅测试空清单放行，不代表实际交付。",
+          "created_at": 1792137426004,
+          "source": "manual",
+          "conversation_id": null,
+          "based_on": [
+            "01a143b1-69b5-7883-bed4-ed27a42fc643",
+            "01a143b5-31d1-7c83-8670-75c9b9a177dd"
+          ]
+        }
+      ],
+      "conversation_id": null,
+      "error": null
+    },
+    {
+      "status": "approved",
+      "versions": [
+        {
+          "id": "01a143b6-f45a-78b2-97b8-d3f7693bf8ad",
+          "content": "手工验收夹具，仅测试空清单放行，不代表实际交付。",
+          "created_at": 1792137426010,
+          "source": "manual",
+          "conversation_id": null,
+          "based_on": [
+            "01a143b1-69b5-7883-bed4-ed27a42fc643",
+            "01a143b5-31d1-7c83-8670-75c9b9a177dd",
+            "01a143b6-f454-7561-a787-e328a4aec2d8"
+          ]
+        }
+      ],
+      "conversation_id": null,
+      "error": null
+    }
+  ],
+  "checks": [],
+  "archived": false,
+  "revision": 10,
+  "created_at": 1792137062831,
+  "updated_at": 1792137426031,
+  "run_id": null
+}

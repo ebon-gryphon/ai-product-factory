@@ -19,6 +19,9 @@ fail() {
 
 command -v node >/dev/null || fail '缺少 Node.js，请先安装 Node.js 22–24。'
 command -v bun >/dev/null || fail '缺少 Bun，请先安装 Bun。'
+if [[ -z "${AIFACTORY_REA_BIN:-}" && -x "$FACTORY_ROOT/tools/rea/node_modules/.bin/rea" ]]; then
+  export AIFACTORY_REA_BIN="$FACTORY_ROOT/tools/rea/node_modules/.bin/rea"
+fi
 cd "$FACTORY_ROOT/AionUi"
 [[ -d node_modules ]] || fail '缺少前端依赖，请先在 AionUi 目录执行 bun install。'
 node -e 'require("electron")' >/dev/null 2>&1 || fail '缺少 Electron，请在 AionUi 目录执行 node node_modules/electron/install.js。'

@@ -20,7 +20,7 @@ function Preview() {
     </nav>
     <main style={{maxWidth:900,margin:'0 auto',padding:'64px 24px'}}>
       <header className={styles.factoryHeader}><span className={styles.factoryEyebrow}>{guid.factory.eyebrow}</span><h1>{guid.factory.title}</h1><p>{guid.factory.subtitle}</p></header>
-      <FactoryLaunchpad disabled={false} onSelect={prompt=>setDraft(value=>value?`${value}\n${prompt}`:prompt)}/>
+      <FactoryLaunchpad disabled={false} selectedPrompt={draft} onSelect={setDraft}/>
       <section style={{padding:24,borderRadius:20,background:'var(--color-bg-2)',border:'1px solid var(--color-border-2)'}}>
         <label htmlFor='preview-draft' style={{display:'block',marginBottom:12,fontWeight:600}}>任务草稿</label>
         <Input.TextArea id='preview-draft' value={draft} onChange={setDraft} autoSize={{minRows:7,maxRows:14}} placeholder='描述你想完成的工作，或选择上方工序…'/>

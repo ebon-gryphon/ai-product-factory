@@ -5,13 +5,14 @@ import styles from '../index.module.css';
 
 type FactoryLaunchpadProps = {
   disabled: boolean;
+  selectedPrompt?: string;
   onSelect: (prompt: string) => void;
 };
 
 const stages = ['requirements', 'content', 'research', 'review'] as const;
 
-/** Add a production brief to the existing conversation draft. */
-const FactoryLaunchpad: React.FC<FactoryLaunchpadProps> = ({ disabled, onSelect }) => {
+/** Select the production brief that replaces the conversation draft. */
+const FactoryLaunchpad: React.FC<FactoryLaunchpadProps> = ({ disabled, selectedPrompt, onSelect }) => {
   const { t } = useTranslation();
   return (
     <section className={styles.factoryLaunchpad}>
@@ -21,6 +22,7 @@ const FactoryLaunchpad: React.FC<FactoryLaunchpadProps> = ({ disabled, onSelect 
             key={stage}
             className={styles.factoryCard}
             disabled={disabled}
+            aria-pressed={selectedPrompt === t(`guid.factory.${stage}.prompt`)}
             onClick={() => onSelect(t(`guid.factory.${stage}.prompt`))}
           >
             <span className={styles.factoryCardContent}>

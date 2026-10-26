@@ -18,7 +18,7 @@ test.describe('Factory desktop startup', () => {
     expect(responses[1].body.success).toBe(true);
   });
 
-  test('all four stages append their briefs without losing existing input', async ({ page }) => {
+  test('all four stages switch the draft to only their matching brief', async ({ page }) => {
     await page.evaluate(() => {
       window.location.hash = '#/guid';
     });
@@ -31,10 +31,15 @@ test.describe('Factory desktop startup', () => {
       { title: /开发拆解|Plan development/i, text: /接口契约|API contract/i },
       { title: /验收交付|Verify delivery/i, text: /缺陷清单|defect/i },
     ];
-    for (const stage of stages) {
+    let previousDraft = 'Factory startup acceptance draft';
+    for (const stage of [...stages, stages[3], stages[0]]) {
       await page.getByRole('button', { name: stage.title }).click();
       await expect(draft).toHaveValue(stage.text);
-      await expect(draft).toHaveValue(/Factory startup acceptance draft/);
+      const currentDraft = await draft.inputValue();
+      if (currentDraft !== previousDraft) expect(currentDraft).not.toContain(previousDraft);
+      await page.getByRole('button', { name: stage.title }).click();
+      await expect(draft).toHaveValue(currentDraft);
+      previousDraft = currentDraft;
     }
     await page.screenshot({ path: 'tests/e2e/results/factory-desktop.png' });
     await draft.fill('');

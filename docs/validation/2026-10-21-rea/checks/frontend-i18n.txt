@@ -1,0 +1,75 @@
+Publication copy: local filesystem paths use placeholders; test results are unchanged.
+
+Archived from final functions.exec / exec_command tool run, session_id 80501. These records preserve the observed tool output; checks were not rerun when archiving.
+Working directory: <PROJECT_ROOT>/AionUi
+Final command chain exit_code: 0
+
+Command: node scripts/check-i18n.js
+
+🔍 i18n validation started
+
+========================================
+
+📁 Checking directory structure...
+
+✅ Locale directory exists: zh-CN
+✅ Locale directory exists: en-US
+✅ Locale directory exists: ja-JP
+✅ Locale directory exists: zh-TW
+✅ Locale directory exists: ko-KR
+✅ Locale directory exists: tr-TR
+✅ Locale directory exists: ru-RU
+✅ Locale directory exists: uk-UA
+✅ Locale directory exists: pt-BR
+✅ Locale directory exists: de-DE
+✅ Locale directory exists: es-ES
+✅ Locale directory exists: fr-FR
+✅ Locale directory exists: fa-IR
+
+🔑 Checking translation key consistency...
+
+ℹ️  Checking zh-CN...
+✅ zh-CN translations are complete
+ℹ️  Checking ja-JP...
+✅ ja-JP translations are complete
+ℹ️  Checking zh-TW...
+✅ zh-TW translations are complete
+ℹ️  Checking ko-KR...
+✅ ko-KR translations are complete
+ℹ️  Checking tr-TR...
+✅ tr-TR translations are complete
+ℹ️  Checking ru-RU...
+✅ ru-RU translations are complete
+ℹ️  Checking uk-UA...
+✅ uk-UA translations are complete
+ℹ️  Checking pt-BR...
+✅ pt-BR translations are complete
+ℹ️  Checking de-DE...
+✅ de-DE translations are complete
+ℹ️  Checking es-ES...
+✅ es-ES translations are complete
+ℹ️  Checking fr-FR...
+✅ fr-FR translations are complete
+ℹ️  Checking fa-IR...
+✅ fa-IR translations are complete
+
+📭 Checking for empty translations...
+
+
+🧪 Checking literal t() key usages...
+
+✅ No invalid literal i18n keys found in renderer code
+
+🧩 Checking i18n key type definition sync...
+
+✅ i18n key type definition is in sync
+
+⚙️  Checking i18n configuration...
+
+✅ i18n configuration check passed
+
+========================================
+
+📊 Validation summary:
+
+✅ i18n validation passed

@@ -1,0 +1,29 @@
+Publication copy: local filesystem paths use placeholders; test results are unchanged.
+
+
+Running 12 tests using 1 worker
+
+(node:22417) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:22417) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[E2E] Launching DEV app from: <PROJECT_ROOT>/AionUi
+  ✓   1 tests/e2e/specs/factory-rea.e2e.ts:193:7 › REA product deconstruction › scans, traces a real feature, downloads verifiable history and transfers saved findings (19.8s)
+  ✓   2 tests/e2e/specs/factory-rea.e2e.ts:272:7 › REA product deconstruction › stops the active scan after a tab switch, retries and invalidates changed targets (14.5s)
+  ✓   3 tests/e2e/specs/factory-rea.e2e.ts:315:7 › REA product deconstruction › traces an ASAR and retains its overview when the investigation question changes (10.2s)
+  ✓   4 tests/e2e/specs/factory-rea.e2e.ts:368:9 › REA product deconstruction › shows an actionable failure for a missing directory without fabricating evidence (3.9s)
+  ✓   5 tests/e2e/specs/factory-rea.e2e.ts:368:9 › REA product deconstruction › shows an actionable failure for a unsupported loose JavaScript file without fabricating evidence (4.3s)
+  ✓   6 tests/e2e/specs/factory-rea.e2e.ts:381:7 › REA product deconstruction › explains mocked tool readiness failures and rechecks before enabling a scan (1.3s)
+(node:25914) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:25914) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[E2E] Launching DEV app from: <PROJECT_ROOT>/AionUi
+  ✓   7 tests/e2e/specs/factory-rea.e2e.ts:193:7 › REA product deconstruction › scans, traces a real feature, downloads verifiable history and transfers saved findings (19.2s)
+  ✓   8 tests/e2e/specs/factory-rea.e2e.ts:272:7 › REA product deconstruction › stops the active scan after a tab switch, retries and invalidates changed targets (20.4s)
+  ✓   9 tests/e2e/specs/factory-rea.e2e.ts:315:7 › REA product deconstruction › traces an ASAR and retains its overview when the investigation question changes (17.2s)
+  ✓  10 tests/e2e/specs/factory-rea.e2e.ts:368:9 › REA product deconstruction › shows an actionable failure for a missing directory without fabricating evidence (4.1s)
+  ✓  11 tests/e2e/specs/factory-rea.e2e.ts:368:9 › REA product deconstruction › shows an actionable failure for a unsupported loose JavaScript file without fabricating evidence (3.9s)
+  ✓  12 tests/e2e/specs/factory-rea.e2e.ts:381:7 › REA product deconstruction › explains mocked tool readiness failures and rechecks before enabling a scan (1.4s)
+
+  12 passed (2.0m)

@@ -1,0 +1,8 @@
+Publication copy: local filesystem paths use placeholders; test results are unchanged.
+
+Captured verbatim from tool exec session 80073 (final affected-check run).
+Session final exit_code: 0. This is a transcript export; tests were not rerun.
+
+    Checking aionui-factory v0.2.2 (<PROJECT_ROOT>/AionCore/crates/aionui-factory)
+    Checking aionui-app v0.2.2 (<PROJECT_ROOT>/AionCore/crates/aionui-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.84s

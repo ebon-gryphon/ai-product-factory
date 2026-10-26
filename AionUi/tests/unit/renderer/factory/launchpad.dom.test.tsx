@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import FactoryLaunchpad from '@/renderer/pages/guid/components/FactoryLaunchpad';
-import { appendPromptToDraft } from '@/renderer/hooks/chat/useSendBoxDraft';
 import locale from '@/renderer/services/i18n/locales/en-US/guid.json';
 
 vi.mock('react-i18next', () => ({
@@ -35,24 +34,23 @@ describe('factory production briefs', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
-  it('preserves existing user materials when appending a brief', () => {
+  it('switches between briefs and repeated selections without accumulating prompts', () => {
     function DraftHarness() {
       const [draft, setDraft] = useState('Original customer notes');
       return (
         <>
-          <FactoryLaunchpad
-            disabled={false}
-            onSelect={(prompt) => setDraft((value) => appendPromptToDraft(value, prompt))}
-          />
+          <FactoryLaunchpad disabled={false} selectedPrompt={draft} onSelect={setDraft} />
           <output>{draft}</output>
         </>
       );
     }
     render(<DraftHarness />);
-    fireEvent.click(screen.getByRole('button', { name: /Define product/ }));
-    expect(screen.getByRole('status')).toHaveTextContent('Original customer notes');
-    expect(screen.getByRole('status').textContent).toBe(
-      `Original customer notes\n${locale.factory.requirements.prompt}`
-    );
+    for (const stage of ['requirements', 'content', 'content', 'research', 'review', 'requirements'] as const) {
+      const button = screen.getByRole('button', { name: new RegExp(locale.factory[stage].title) });
+      fireEvent.click(button);
+      expect(screen.getByRole('status').textContent).toBe(locale.factory[stage].prompt);
+      expect(button).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getAllByRole('button', { pressed: true })).toHaveLength(1);
+    }
   });
 });

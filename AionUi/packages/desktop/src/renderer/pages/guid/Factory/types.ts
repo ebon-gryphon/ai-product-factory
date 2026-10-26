@@ -1,5 +1,19 @@
 export type StageStatus = 'pending' | 'running' | 'review' | 'approved' | 'stale' | 'failed';
+export type ReaDirection = 'incoming' | 'outgoing' | 'both';
+export type ReaEvidence = {
+  evidence_id: string;
+  file_name: string;
+  sha256: string;
+  bytes: number;
+  operation: string;
+  summary: Record<string, unknown>;
+  limitations: string[];
+  coverage: unknown;
+  candidates: { node_id: string; kind: string; label: string }[];
+  candidate_total: number;
+};
 export type Artifact = {
+  rea?: ReaEvidence | null;
   id: string;
   content: string;
   created_at: number;
@@ -10,7 +24,11 @@ export type Artifact = {
 export type Stage = { status: StageStatus; versions: Artifact[]; conversation_id: string | null; error: string | null };
 export type Check = { id: string; text: string; passed: boolean };
 export type Model = { provider_id: string; model: string; use_model?: string | null };
+export type Workflow = 'production' | 'rea';
+export type ReaStatus = { available: boolean; version: string | null; error: string | null };
 export type ProjectInput = {
+  workflow?: Workflow;
+  target_path?: string;
   name: string;
   brief: string;
   assistant_id: string;
@@ -28,7 +46,7 @@ export type Project = ProjectInput & {
   run_id: string | null;
 };
 export type Action =
-  | { action: 'run'; stage: number; automatic: boolean }
+  | { action: 'run'; stage: number; automatic: boolean; rea_seed?: string; rea_direction?: ReaDirection }
   | { action: 'pause' }
   | { action: 'save'; stage: number; content: string }
   | { action: 'restore'; stage: number; version_id: string }

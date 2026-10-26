@@ -1,0 +1,30 @@
+Publication copy: local filesystem paths use placeholders; test results are unchanged.
+
+Captured verbatim from tool exec session 80073 (final affected-check run).
+Session final exit_code: 0. This is a transcript export; tests were not rerun.
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.40s
+     Running tests/workflow.rs (target/debug/deps/workflow-b9e159f7b795502f)
+
+running 19 tests
+test changing_the_question_reuses_the_overview_and_invalidates_trace_and_analysis ... ok
+test rea_evidence_and_feature_trace_work_without_an_ai_assistant ... ok
+test editing_upstream_invalidates_downstream_and_restore_adds_history ... ok
+test archive_is_reversible_and_blocks_execution ... ok
+test rea_pipeline_passes_inspection_and_trace_to_two_analysis_stages ... ok
+test rea_failure_preserves_missing_evidence_and_stops_analysis ... ok
+test pipeline_passes_context_and_preserves_review_boundary ... ok
+test manual_evidence_cannot_bypass_rea_inspection_or_reactivate_a_changed_target ... ok
+test rea_requires_an_explicit_current_seed_and_blocks_automatic_pipeline ... ok
+test failures_stop_pipeline_and_retry_preserves_prior_versions ... ok
+test legacy_project_json_defaults_to_production_without_losing_versions ... ok
+test stale_pause_after_completion_is_a_read_only_noop ... ok
+test rea_target_validation_and_workflow_immutability_preserve_history ... ok
+test rea_stop_waits_for_inspector_cancellation_and_never_commits_output ... ok
+test stale_revision_and_other_user_cannot_modify_project ... ok
+test restart_marks_inflight_work_interrupted_without_replaying ... ok
+test stop_prevents_output_commit_and_calls_runtime_cancel ... ok
+test validation_and_delivery_checks_block_false_completion ... ok
+test stop_is_delivered_before_marker_conflicts_and_storage_errors_remain_visible ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.72s

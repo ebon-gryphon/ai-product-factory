@@ -98,3 +98,43 @@ async fn factory_http_persists_versions_and_rejects_stale_updates() {
         .unwrap();
     assert_eq!(body_json(app.oneshot(get).await.unwrap()).await["data"]["revision"], 2);
 }
+
+#[tokio::test]
+async fn rea_status_requires_auth_and_invalid_target_does_not_create_project() {
+    let (mut app, services, _dir) = setup().await;
+    let unauth = Request::builder()
+        .uri("/api/factory/rea/status")
+        .body(Body::empty())
+        .unwrap();
+    assert_eq!(
+        app.clone().oneshot(unauth).await.unwrap().status(),
+        StatusCode::UNAUTHORIZED
+    );
+    let unauth = Request::builder()
+        .uri("/api/factory/projects/foreign/rea-evidence/version")
+        .body(Body::empty())
+        .unwrap();
+    assert_eq!(
+        app.clone().oneshot(unauth).await.unwrap().status(),
+        StatusCode::UNAUTHORIZED
+    );
+    let (token, csrf) = setup_and_login(&mut app, &services, "rea-admin", "StrongP@ss1").await;
+    let status = Request::builder()
+        .uri("/api/factory/rea/status")
+        .header("authorization", format!("Bearer {token}"))
+        .body(Body::empty())
+        .unwrap();
+    let response = app.clone().oneshot(status).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let data = body_json(response).await;
+    assert!(data["data"]["available"].is_boolean());
+    let response = app.clone().oneshot(json_with_token("POST", "/api/factory/projects", json!({"name":"REA", "brief":"trace", "assistant_id":"", "workflow":"rea", "target_path":"https://example.com"}), &token, &csrf)).await.unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert!(
+        body_json(response)
+            .await
+            .to_string()
+            .contains("FACTORY_REA_INVALID_TARGET")
+    );
+    assert!(services.factory_service.list("other-user").await.unwrap().is_empty());
+}

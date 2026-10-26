@@ -1,0 +1,9 @@
+Publication copy: local filesystem paths use placeholders; test results are unchanged.
+
+Archived from final functions.exec / exec_command tool run, session_id 80501. These records preserve the observed tool output; checks were not rerun when archiving.
+Working directory: <PROJECT_ROOT>/AionUi
+Final command chain exit_code: 0
+
+Command: node node_modules/typescript/bin/tsc --noEmit
+
+No diagnostics were emitted. This command followed the focused tests and preceded scripts/check-i18n.js in an && chain. The i18n check ran and the full command returned exit_code 0, establishing that tsc exited successfully.

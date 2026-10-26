@@ -1,0 +1,14 @@
+Publication copy: local filesystem paths use placeholders; test results are unchanged.
+
+Captured verbatim from tool exec session 80073 (final affected-check run).
+Session final exit_code: 0. This is a transcript export; tests were not rerun.
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 18.51s
+     Running tests/factory_routes.rs (target/debug/deps/factory_routes-9ce5d7b5ace96103)
+
+running 3 tests
+test rea_status_requires_auth_and_invalid_target_does_not_create_project ... ok
+test factory_routes_require_authentication_and_csrf ... ok
+test factory_http_persists_versions_and_rejects_stale_updates ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.14s

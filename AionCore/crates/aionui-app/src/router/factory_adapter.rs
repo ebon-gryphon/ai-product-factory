@@ -1,8 +1,11 @@
 use aionui_ai_agent::IWorkerTaskManager;
-use aionui_api_types::{AssistantConversationRequest, CreateConversationRequest, FactoryProject};
+use aionui_api_types::{
+    AssistantConversationRequest, CreateConversationRequest, FactoryProject, FactoryReaDirection, FactoryReaEvidence,
+    FactoryReaStatus,
+};
 use aionui_conversation::{ConversationAgentTurnRequest, ConversationAgentTurnStatus, ConversationService};
 use aionui_db::{IConversationRepository, MessagePageDirection, MessagePageParams};
-use aionui_factory::{FactoryError, FactoryRunner};
+use aionui_factory::{FactoryError, FactoryReaResult, FactoryRunner, FactoryStopSignal};
 use std::sync::Arc;
 
 pub(crate) struct FactoryConversationRunner {
@@ -92,6 +95,33 @@ impl FactoryRunner for FactoryConversationRunner {
             }
         }
         Err(FactoryError::Execution("FACTORY_EMPTY_OUTPUT"))
+    }
+    async fn inspect(
+        &self,
+        project: &FactoryProject,
+        stop: Arc<FactoryStopSignal>,
+    ) -> Result<FactoryReaResult, FactoryError> {
+        super::factory_rea::inspect(&self.work_dir, project, stop).await
+    }
+    async fn trace(
+        &self,
+        project: &FactoryProject,
+        source: &FactoryReaEvidence,
+        seed: &str,
+        direction: FactoryReaDirection,
+        stop: Arc<FactoryStopSignal>,
+    ) -> Result<FactoryReaResult, FactoryError> {
+        super::factory_rea::trace(&self.work_dir, project, source, seed, direction, stop).await
+    }
+    async fn read_evidence(
+        &self,
+        project: &FactoryProject,
+        evidence: &FactoryReaEvidence,
+    ) -> Result<Vec<u8>, FactoryError> {
+        super::factory_rea::read_evidence(&self.work_dir, project, evidence).await
+    }
+    async fn rea_status(&self) -> FactoryReaStatus {
+        super::factory_rea::status().await
     }
     async fn cancel(&self, user: &str, conversation: &str) -> Result<(), FactoryError> {
         if let Some(turn) = self.service.runtime_state().active_turn_id_for(conversation) {

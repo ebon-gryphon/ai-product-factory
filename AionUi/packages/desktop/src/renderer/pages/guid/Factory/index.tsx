@@ -5,14 +5,23 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import useSWR from 'swr';
 import { useAuth } from '@renderer/hooks/context/AuthContext';
 import * as api from './client';
-import type { Action, ProjectInput } from './types';
+import type { Action, ProjectInput, Workflow } from './types';
 import ProjectForm from './ProjectForm';
 import ArtifactPanel from './ArtifactPanel';
-import { download, projectMarkdown } from './artifacts';
+import { download, projectMarkdown, projectWorkflow } from './artifacts';
 import styles from './Factory.module.css';
+import { ReaEnvironment, ReaTransfer } from './ReaPanel';
+import ReaWorkflow from './ReaWorkflow';
+import alliedServiceDepotModel from '@renderer/assets/logos/brand/allied-service-depot-model.png';
+import sovietWarFactoryModel from '@renderer/assets/logos/brand/app.png';
 
 const stageKeys = ['requirements', 'content', 'research', 'review'] as const;
-export default function Factory(): React.JSX.Element {
+export function ReaFactory(): React.JSX.Element {
+  return <Factory workflow='rea' />;
+}
+
+export default function Factory({ workflow = 'production' }: { workflow?: Workflow }): React.JSX.Element {
+  const isRea = workflow === 'rea';
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, status } = useAuth();
@@ -25,12 +34,20 @@ export default function Factory(): React.JSX.Element {
     mutate: reload,
   } = useSWR(owner ? ['factory-projects', owner] : null, api.listProjects, { refreshInterval: 5000 });
   const {
-    data: project,
+    data: loadedProject,
     error: detailError,
     mutate: refresh,
   } = useSWR(owner && selected ? ['factory-project', owner, selected] : null, () => api.getProject(selected), {
     refreshInterval: 1500,
   });
+  const project = loadedProject && projectWorkflow(loadedProject) === workflow ? loadedProject : undefined;
+  const {
+    data: reaStatus,
+    error: reaError,
+    mutate: checkRea,
+  } = useSWR(owner && isRea ? ['factory-rea-status', owner] : null, api.reaStatus);
+  const reaBackendOutdated = reaError instanceof Error && reaError.message === 'FACTORY_HTTP_404';
+  const visibleProjects = projects?.filter((item) => projectWorkflow(item) === workflow);
   const activeConversation = project?.run_id
     ? project.stages.find((item) => item.status === 'running')?.conversation_id
     : null;
@@ -49,7 +66,9 @@ export default function Factory(): React.JSX.Element {
   const [busy, setBusy] = useState(false);
   const [archived, setArchived] = useState(false);
   const [checkText, setCheckText] = useState('');
-  const titles = stageKeys.map((key) => t(`guid.factory.${key}.title`));
+  const titles = isRea
+    ? (['evidence', 'flow', 'architecture', 'reconstruction'] as const).map((key) => t(`guid.rea.stages.${key}`))
+    : stageKeys.map((key) => t(`guid.factory.${key}.title`));
   const report = (error: unknown): void => {
     const code = error instanceof Error ? error.message : 'FACTORY_STORAGE';
     Message.error(
@@ -99,7 +118,13 @@ export default function Factory(): React.JSX.Element {
   const start = (automatic: boolean): void => {
     Modal.confirm({
       title: t('guid.production.startConfirm'),
-      content: automatic ? t('guid.production.autoHint') : t('guid.production.runHint'),
+      content: automatic
+        ? isRea
+          ? t('guid.rea.autoHint')
+          : t('guid.production.autoHint')
+        : isRea && stage === 0
+          ? t('guid.rea.inspectHint')
+          : t('guid.production.runHint'),
       onOk: () => onAction({ action: 'run', stage, automatic }),
     });
   };
@@ -107,17 +132,37 @@ export default function Factory(): React.JSX.Element {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <div>
-          <h1>{t('guid.production.title')}</h1>
-          <p className={styles.muted}>{t('guid.production.subtitle')}</p>
+        <div className={styles.buildingHeading}>
+          <h1 className={styles.buildingTitle}>
+            <img
+              className={styles.buildingTitleIcon}
+              src={isRea ? alliedServiceDepotModel : sovietWarFactoryModel}
+              width={80}
+              height={80}
+              alt=''
+              aria-hidden='true'
+              draggable={false}
+            />
+            <span className={styles.buildingTitleText}>{t(isRea ? 'guid.rea.title' : 'guid.production.title')}</span>
+          </h1>
+          <p className={styles.muted}>{isRea ? t('guid.rea.subtitle') : t('guid.production.subtitle')}</p>
         </div>
         <div className={styles.row}>
           <Button onClick={() => navigate('/settings/model')}>{t('guid.production.configure')}</Button>
-          <Button type='primary' onClick={() => setForm('create')}>
-            {t('guid.production.create')}
+          <Button type='primary' disabled={isRea && reaBackendOutdated} onClick={() => setForm('create')}>
+            {isRea ? t('guid.rea.create') : t('guid.production.create')}
           </Button>
         </div>
       </header>
+      {isRea && (
+        <ReaEnvironment
+          status={reaStatus}
+          error={reaError}
+          onRetry={() => {
+            void checkRea();
+          }}
+        />
+      )}
       {(listError || detailError) && (
         <Alert
           type='error'
@@ -141,7 +186,7 @@ export default function Factory(): React.JSX.Element {
             {t('guid.production.showArchived')}
           </Checkbox>
           {!projects && !listError && <Spin />}
-          {projects
+          {visibleProjects
             ?.filter((p) => archived || !p.archived)
             .map((p) => (
               <Button
@@ -158,11 +203,15 @@ export default function Factory(): React.JSX.Element {
                 {p.archived ? ` · ${t('guid.production.archived')}` : ''}
               </Button>
             ))}
-          {projects?.length === 0 && <Empty description={t('guid.production.noProjects')} />}
+          {visibleProjects?.length === 0 && (
+            <Empty description={isRea ? t('guid.rea.noProjects') : t('guid.production.noProjects')} />
+          )}
         </aside>
         <section className={styles.panel}>
           {!selected ? (
             <Empty description={t('guid.production.chooseProject')} />
+          ) : loadedProject && !project ? (
+            <Empty description={t('guid.rea.wrongWorkflow')} />
           ) : !project ? (
             <Spin />
           ) : (
@@ -170,9 +219,26 @@ export default function Factory(): React.JSX.Element {
               <div className={styles.header}>
                 <div>
                   <h2>{project.name}</h2>
-                  <span className={styles.muted}>{t('guid.production.progress', { count: completed })}</span>
+                  {!isRea && (
+                    <span className={styles.muted}>{t('guid.production.progress', { count: completed })}</span>
+                  )}
+                  {isRea && (
+                    <p className={styles.muted}>
+                      {t('guid.rea.targetPath')} · <code>{project.target_path}</code>
+                    </p>
+                  )}
                 </div>
                 <div className={styles.row}>
+                  {isRea && (
+                    <ReaTransfer
+                      project={project}
+                      titles={titles}
+                      onCreated={async (created) => {
+                        await reload();
+                        void navigate(`/factory?project=${encodeURIComponent(created.id)}`);
+                      }}
+                    />
+                  )}
                   <Button disabled={locked} onClick={() => setForm('edit')}>
                     {t('guid.production.edit')}
                   </Button>
@@ -198,7 +264,7 @@ export default function Factory(): React.JSX.Element {
                   </Button>
                 </div>
               </div>
-              <Progress percent={completed * 25} />
+              {!isRea && <Progress percent={completed * 25} />}
               <div className={styles.stages}>
                 {project.stages.map((s, i) => (
                   <Button
@@ -211,53 +277,84 @@ export default function Factory(): React.JSX.Element {
                       <strong>
                         {i + 1}. {titles[i]}
                       </strong>
-                      <span>{t(`guid.production.status.${s.status}`)}</span>
+                      <span>
+                        {isRea && ['review', 'approved'].includes(s.status)
+                          ? t(i < 2 ? 'guid.rea.toolResultReady' : 'guid.rea.interpretationReady')
+                          : t(`guid.production.status.${s.status}`)}
+                      </span>
                     </span>
                   </Button>
                 ))}
               </div>
-              <div className={styles.row}>
-                <Button type='primary' disabled={locked || !project.assistant_id} onClick={() => start(false)}>
-                  {t('guid.production.runStage')}
-                </Button>
-                <Button disabled={locked || !project.assistant_id} onClick={() => start(true)}>
-                  {t('guid.production.runAll')}
-                </Button>
-                {project.run_id && (
-                  <Button status='warning' disabled={busy} onClick={() => perform({ action: 'pause' })}>
-                    {t('guid.production.stop')}
-                  </Button>
-                )}
-                <Button
-                  disabled={locked || current?.status !== 'review'}
-                  onClick={() => perform({ action: 'approve', stage })}
-                >
-                  {t('guid.production.approve')}
-                </Button>
-                {current?.conversation_id && (
-                  <Button onClick={() => navigate(`/conversation/${current.conversation_id}`)}>
-                    {t('guid.production.openConversation')}
-                  </Button>
-                )}
-                {current && <Tag>{t(`guid.production.status.${current.status}`)}</Tag>}
-              </div>
-              {!project.assistant_id && <Alert type='warning' content={t('guid.production.noAssistant')} />}
-              {project.run_id && (
-                <Alert
-                  type={pendingConfirmations.length > 0 ? 'warning' : 'info'}
-                  content={
-                    pendingConfirmations.length > 0
-                      ? t('guid.production.waitingConfirmation')
-                      : t('guid.production.runningHint')
-                  }
-                  action={
-                    activeConversation ? (
-                      <Button onClick={() => navigate(`/conversation/${activeConversation}`)}>
-                        {t('guid.production.openActiveConversation')}
-                      </Button>
-                    ) : undefined
-                  }
+              {isRea ? (
+                <ReaWorkflow
+                  key={`${project.id}-${project.stages[0].versions.at(-1)?.id || 'empty'}`}
+                  project={project}
+                  stage={stage}
+                  titles={titles}
+                  busy={busy}
+                  status={reaError ? undefined : reaStatus}
+                  onAction={onAction}
+                  onStage={setStage}
+                  activeConversation={activeConversation}
+                  waitingConfirmation={pendingConfirmations.length > 0}
+                  onOpenConversation={(id) => {
+                    void navigate(`/conversation/${id}`);
+                  }}
                 />
+              ) : (
+                <>
+                  <div className={styles.row}>
+                    <Button type='primary' disabled={locked || !project.assistant_id} onClick={() => start(false)}>
+                      {isRea && stage === 0 ? t('guid.rea.inspect') : t('guid.production.runStage')}
+                    </Button>
+                    <Button
+                      disabled={locked || !project.assistant_id || (isRea && stage === 0 && !reaStatus?.available)}
+                      onClick={() => start(true)}
+                    >
+                      {t('guid.production.runAll')}
+                    </Button>
+                    {project.run_id && (
+                      <Button status='warning' disabled={busy} onClick={() => perform({ action: 'pause' })}>
+                        {t('guid.production.stop')}
+                      </Button>
+                    )}
+                    <Button
+                      disabled={locked || current?.status !== 'review'}
+                      onClick={() => perform({ action: 'approve', stage })}
+                    >
+                      {t('guid.production.approve')}
+                    </Button>
+                    {current?.conversation_id && (
+                      <Button onClick={() => navigate(`/conversation/${current.conversation_id}`)}>
+                        {t('guid.production.openConversation')}
+                      </Button>
+                    )}
+                    {current && <Tag>{t(`guid.production.status.${current.status}`)}</Tag>}
+                  </div>
+                  {!project.assistant_id && (!isRea || stage > 0) && (
+                    <Alert type='warning' content={t('guid.production.noAssistant')} />
+                  )}
+                  {project.run_id && (
+                    <Alert
+                      type={pendingConfirmations.length > 0 ? 'warning' : 'info'}
+                      content={
+                        pendingConfirmations.length > 0
+                          ? t('guid.production.waitingConfirmation')
+                          : isRea && stage === 0
+                            ? t('guid.rea.inspectRunning')
+                            : t('guid.production.runningHint')
+                      }
+                      action={
+                        activeConversation ? (
+                          <Button onClick={() => navigate(`/conversation/${activeConversation}`)}>
+                            {t('guid.production.openActiveConversation')}
+                          </Button>
+                        ) : undefined
+                      }
+                    />
+                  )}
+                </>
               )}
               <ArtifactPanel
                 key={`${project.id}-${stage}-${current?.versions.at(-1)?.id || 'empty'}`}
@@ -266,58 +363,63 @@ export default function Factory(): React.JSX.Element {
                 busy={busy}
                 onAction={onAction}
               />
-              <section className={styles.checks}>
-                <h3>{t('guid.production.checks')}</h3>
-                {project.checks.map((check) => (
-                  <div className={styles.row} key={check.id}>
-                    <Checkbox
-                      disabled={locked}
-                      checked={check.passed}
-                      onChange={(passed) =>
-                        perform({
+              {!isRea && (
+                <section className={styles.checks}>
+                  <h3>{t('guid.production.checks')}</h3>
+                  {project.checks.map((check) => (
+                    <div className={styles.row} key={check.id}>
+                      <Checkbox
+                        disabled={locked}
+                        checked={check.passed}
+                        onChange={(passed) =>
+                          perform({
+                            action: 'checks',
+                            checks: project.checks.map((c) => (c.id === check.id ? { ...c, passed } : c)),
+                          })
+                        }
+                      >
+                        {check.text}
+                      </Checkbox>
+                      <Button
+                        type='text'
+                        disabled={locked}
+                        onClick={() =>
+                          perform({ action: 'checks', checks: project.checks.filter((c) => c.id !== check.id) })
+                        }
+                      >
+                        {t('guid.production.remove')}
+                      </Button>
+                    </div>
+                  ))}
+                  <Input.Search
+                    aria-label={t('guid.production.addCheck')}
+                    placeholder={t('guid.production.addCheck')}
+                    searchButton={t('guid.production.add')}
+                    value={checkText}
+                    disabled={locked}
+                    maxLength={250}
+                    onChange={setCheckText}
+                    onSearch={() => {
+                      if (checkText.trim())
+                        void onAction({
                           action: 'checks',
-                          checks: project.checks.map((c) => (c.id === check.id ? { ...c, passed } : c)),
+                          checks: [
+                            ...project.checks,
+                            { id: crypto.randomUUID(), text: checkText.trim(), passed: false },
+                          ],
                         })
-                      }
-                    >
-                      {check.text}
-                    </Checkbox>
-                    <Button
-                      type='text'
-                      disabled={locked}
-                      onClick={() =>
-                        perform({ action: 'checks', checks: project.checks.filter((c) => c.id !== check.id) })
-                      }
-                    >
-                      {t('guid.production.remove')}
-                    </Button>
-                  </div>
-                ))}
-                <Input.Search
-                  aria-label={t('guid.production.addCheck')}
-                  placeholder={t('guid.production.addCheck')}
-                  searchButton={t('guid.production.add')}
-                  value={checkText}
-                  disabled={locked}
-                  maxLength={250}
-                  onChange={setCheckText}
-                  onSearch={() => {
-                    if (checkText.trim())
-                      void onAction({
-                        action: 'checks',
-                        checks: [...project.checks, { id: crypto.randomUUID(), text: checkText.trim(), passed: false }],
-                      })
-                        .then(() => setCheckText(''))
-                        .catch(() => {});
-                  }}
-                />
-              </section>
+                          .then(() => setCheckText(''))
+                          .catch(() => {});
+                    }}
+                  />
+                </section>
+              )}
             </>
           )}
         </section>
       </div>
       <Modal
-        title={form === 'edit' ? t('guid.production.edit') : t('guid.production.create')}
+        title={form === 'edit' ? t('guid.production.edit') : isRea ? t('guid.rea.create') : t('guid.production.create')}
         visible={Boolean(form)}
         footer={null}
         onCancel={() => setForm(null)}
@@ -325,6 +427,7 @@ export default function Factory(): React.JSX.Element {
       >
         {form && (
           <ProjectForm
+            workflow={workflow}
             initial={form === 'edit' ? project : undefined}
             assistants={assistants}
             models={models}

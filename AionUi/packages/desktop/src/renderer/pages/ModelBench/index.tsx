@@ -7,6 +7,7 @@ import { loadHistory, loadModels, runComparison, saveRecord } from './client';
 import type { BenchModel, BenchRecord, BenchResult } from './types';
 import { modelKey } from './types';
 import styles from './ModelBench.module.css';
+import alliedBattleLabModel from '@renderer/assets/logos/brand/allied-battle-lab-model.png';
 
 const ModelBench: React.FC = () => {
   const { t } = useTranslation();
@@ -136,8 +137,19 @@ const ModelBench: React.FC = () => {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <div>
-          <h1>{t('common.modelBench.title')}</h1>
+        <div className={styles.buildingHeading}>
+          <h1 className={styles.buildingTitle}>
+            <img
+              className={styles.buildingModel}
+              src={alliedBattleLabModel}
+              width={80}
+              height={80}
+              alt=''
+              aria-hidden='true'
+              draggable={false}
+            />
+            <span className={styles.buildingTitleText}>{t('common.modelBench.title')}</span>
+          </h1>
           <p>{t('common.modelBench.subtitle')}</p>
         </div>
         <div className={styles.actions}>

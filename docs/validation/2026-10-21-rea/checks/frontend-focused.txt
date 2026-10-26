@@ -1,0 +1,14 @@
+Publication copy: local filesystem paths use placeholders; test results are unchanged.
+
+Archived from final functions.exec / exec_command tool run, session_id 80501. These records preserve the observed tool output; checks were not rerun when archiving.
+Working directory: <PROJECT_ROOT>/AionUi
+Final command chain exit_code: 0
+
+Command: node node_modules/vitest/vitest.mjs run tests/unit/renderer/factory/rea-page.dom.test.tsx tests/unit/renderer/factory/rea-artifacts.test.ts
+
+ RUN  v4.1.0 <PROJECT_ROOT>/AionUi
+
+ Test Files  2 passed (2)
+      Tests  25 passed (25)
+   Start at  10:24:53
+   Duration  10.08s (transform 193ms, setup 142ms, import 645ms, tests 8.49s, environment 766ms)

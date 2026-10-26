@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-21",
+  "version": "6.7.0",
+  "command": "rea trace-application-feature <input-json-file> --json",
+  "input": {
+    "applicationEvidenceId": "ev_bfa33583c5753c04c6ced71ebf3eeddb946ed89a36189c01d41a3299b0a63b00",
+    "seed": {
+      "kind": "node-id",
+      "value": "jag_node_8d16bf93c87465d311d87cdac2132c3a08dfbf910f22bb4ead1a7aa178c775c2",
+      "match": null,
+      "case_sensitive": false
+    },
+    "direction": "both"
+  },
+  "exitCode": 0,
+  "outputBytes": 104224,
+  "outputSha256": "b45b546517c2932c9336b3d8ae709232214698d24118dd650567714afd4af350",
+  "evidenceId": "ev_d18852b150f353bbee908b130c8c347e56f35a01bd0103e68902af1b3b9205f7",
+  "summary": {
+    "matched_seeds": 1,
+    "traced_nodes": 27,
+    "traced_edges": 38,
+    "terminal_paths": 1,
+    "native_handoffs": 0,
+    "observed_facts": 26,
+    "inferred_facts": 41,
+    "unknown_facts": 0,
+    "unavailable_facts": 0
+  },
+  "coverage": {
+    "status": "complete-within-source",
+    "source_graph_status": "complete",
+    "total_seed_matches": 1
+  },
+  "limitations": [
+    "Artifact identity is unavailable for this observation.",
+    "A trace reports graph relationships, not proof that code executed or that a feature is reachable in every state.",
+    "Native handoffs never open a binary or invoke a provider automatically; snapshot reuse remains provider/profile/target exact.",
+    "Static, native, passive-runtime, inferred, and unknown facts retain their original authority in the returned graph."
+  ]
+}

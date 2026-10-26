@@ -4,17 +4,17 @@
 
 这是一套桌面 AI 工作台。AionUi 为 TypeScript monorepo，桌面包使用 Electron、React 19、Arco Design、UnoCSS 与 i18next。AionCore 为 Rust workspace，承担 HTTP/WebSocket 服务与业务存储。
 
-| 层次 | 文件入口 | 职责与改造建议 |
-| --- | --- | --- |
-| 应用与打包 | `AionUi/package.json`、`packages/desktop/electron-builder.yml` | 开发构建、桌面包身份与分发配置；本次更换产品名称和身份 |
-| Electron 主进程 | `AionUi/packages/desktop/src/index.ts` | 应用窗口、平台初始化和后端启动 |
-| 后端定位 | `AionUi/packages/desktop/src/process/backend/binaryResolver.ts` | 从环境变量、应用资源或 PATH 定位 aioncore |
-| React 首页 | `AionUi/packages/desktop/src/renderer/pages/guid/GuidPage.tsx` | 组合助手、模型、文件、输入草稿与发送钩子；本次在此增加工序选择 |
-| 品牌适配 | `AionUi/packages/desktop/src/common/branding.ts` | 统一显示名称与助手名称，保留上游链接和归属文案 |
-| 国际化 | `AionUi/packages/desktop/src/common/config/i18n-config.json` | 支持语言与模块清单；新增 factory 文案放入 guid 模块 |
-| 后端分层 | `AionCore/ARCHITECTURE.zh-CN.md` | 文档描述 Foundation → Capability → Domain → Composition，使用 Axum、Tokio、SQLite；生产流程新增独立 factory domain |
+| 层次            | 文件入口                                                        | 职责与改造建议                                                                                                     |
+| --------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 应用与打包      | `AionUi/package.json`、`packages/desktop/electron-builder.yml`  | 开发构建、桌面包身份与分发配置；本次更换产品名称和身份                                                             |
+| Electron 主进程 | `AionUi/packages/desktop/src/index.ts`                          | 应用窗口、平台初始化和后端启动                                                                                     |
+| 后端定位        | `AionUi/packages/desktop/src/process/backend/binaryResolver.ts` | 从环境变量、应用资源或 PATH 定位 aioncore                                                                          |
+| React 首页      | `AionUi/packages/desktop/src/renderer/pages/guid/GuidPage.tsx`  | 组合助手、模型、文件、输入草稿与发送钩子；本次在此增加工序选择                                                     |
+| 品牌适配        | `AionUi/packages/desktop/src/common/branding.ts`                | 统一显示名称与助手名称，保留上游链接和归属文案                                                                     |
+| 国际化          | `AionUi/packages/desktop/src/common/config/i18n-config.json`    | 支持语言与模块清单；新增 factory 文案放入 guid 模块                                                                |
+| 后端分层        | `AionCore/ARCHITECTURE.zh-CN.md`                                | 文档描述 Foundation → Capability → Domain → Composition，使用 Axum、Tokio、SQLite；生产流程新增独立 factory domain |
 
-首页现有数据流是选择助手和项目资料 → 编辑草稿 → `useGuidSend` → 会话。新增组件 `FactoryLaunchpad` 只负责返回预置任务文本，`GuidPage` 用现有 `appendPromptToDraft` 追加到草稿，之后沿用原发送链路。不会在点击工序时直接调用模型，也不会清空用户原有输入。
+首页现有数据流是选择助手和项目资料 → 编辑草稿 → `useGuidSend` → 会话。组件 `FactoryLaunchpad` 只负责返回预置任务文本；`GuidPage` 用对应提示词替换输入框内容，重复点击不叠加，之后沿用原发送链路。选择工序不直接调用模型。其他明确要求保留草稿的导航预填仍沿用原有追加逻辑。
 
 ## 产品化范围
 
@@ -23,6 +23,16 @@
 保留原有会话、助手、项目与模型对比入口。新增 aionui-factory domain，以 FactoryRunner trait 对接 Composition 层的 ConversationService；每道工序单独创建会话，在同一项目工作目录执行。项目、阶段、版本、依赖版本和人工验收清单通过 044_factory_projects.sql 持久化，更新使用 revision 做并发冲突检测，API 按登录用户隔离并沿用 CSRF。前端生产页通过轮询同步执行状态。
 
 连续执行传递前序成果，但不自动人工验收。上游改动使下游过期；应用重启标记未完成任务为中断，不自动重放。每实例最多同时运行 4 个生产任务，单工序上限 30 分钟；取消失败或超时明确提示用户核查会话，不声称运行已停止。预览 HTML 在不带 allow-same-origin 的 iframe 中运行，iframe 允许脚本和本地表单事件，CSP 禁用网络及表单向外提交；不授予 allow-same-origin。
+
+## REA 产品拆解
+
+`/factory-rea` 是独立入口，复用 factory 的项目、四阶段状态、成果版本和人工验收。项目 JSON 增加 `workflow`（`production` / `rea`）与 `target_path`；旧数据缺省为 production，继续使用现有 SQLite 存储，无需重写历史记录。
+
+REA 四个资料区域为应用概览、功能追踪、证据解读、重建方案。前两阶段由 Composition 层的本地 CLI 适配器分别执行真实静态取证与图追踪，不需要模型；后两阶段沿用会话执行器。追踪从当前应用图的真实候选 node ID 开始，复用完整原始 Evidence。原始证据单独落盘，成果保存结构化元数据、SHA256 和摘要，分析局限与未知项继续传递给下游。两个工具阶段只读，不允许手工保存或恢复来绕过证据门；REA 禁止未选择线索的自动连续执行。
+
+`GET /api/factory/rea/status` 读取已配置工具的可用性与版本，不自动安装。启动脚本通过 `AIFACTORY_REA_BIN` 指定项目内固定版本的 CLI，也支持 PATH 中已有的 rea。安装入口只准备本地运行时，不修改全局 Agent / MCP 配置。执行器对目标路径、进程时限、输出大小及取消做约束，不启动被分析的应用；日志仅记录固定错误码与任务标识，原始证据不进入生产日志。
+
+前端分别展示两个 workflow 的项目。REA 按真实运行阶段显示进度和停止状态，优先展示概览、线索、覆盖范围及局限，不用四份报告的完成比例表示问题已经回答。原始 JSON 下载通过项目与版本鉴权、受控文件名、大小及散列复核。转加工时仅引用所选阶段的已保存版本，并记录源项目与版本编号，不自动运行收费工序。网页 CDP、原生反编译和动态执行不属于本次接入范围；详细依据见 [REA 工作方法](REA-WORKFLOW.md)。
 
 ## 修改边界
 

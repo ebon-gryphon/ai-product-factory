@@ -1,0 +1,19 @@
+Publication copy: local filesystem paths use placeholders; test results are unchanged.
+
+Captured verbatim from tool exec session 80073 (final affected-check run).
+Session final exit_code: 0. This is a transcript export; tests were not rerun.
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.99s
+     Running unittests src/lib.rs (target/debug/deps/aionui_app-8c3c58fcfe91f93e)
+
+running 8 tests
+test router::factory_rea::tests::malformed_or_unrelated_output_is_not_accepted_as_evidence ... ok
+test router::factory_rea::tests::bounded_reader_refuses_truncation_instead_of_returning_partial_json ... ok
+test router::factory_rea::tests::supervised_process_preserves_nonzero_exit_failure ... ok
+test router::factory_rea::tests::raw_download_preserves_original_bytes_and_rejects_tampering_or_traversal ... ok
+test router::factory_rea::tests::supervised_process_times_out_instead_of_hanging ... ok
+test router::factory_rea::tests::cancellation_terminates_the_process_before_returning ... ok
+test router::factory_rea::tests::exiting_parent_does_not_leave_a_descendant_holding_capture_pipes ... ok
+test router::factory_rea::tests::stale_run_response_still_stops_the_current_task_and_reaps_its_process ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 51 filtered out; finished in 0.30s

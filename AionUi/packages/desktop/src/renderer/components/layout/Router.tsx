@@ -8,6 +8,9 @@ import { TEAM_MODE_ENABLED } from '@/common/config/constants';
 const Conversation = React.lazy(() => import('@renderer/pages/conversation'));
 const Guid = React.lazy(() => import('@renderer/pages/guid'));
 const Factory = React.lazy(() => import('@renderer/pages/guid/Factory'));
+const ReaFactory = React.lazy(() =>
+  import('@renderer/pages/guid/Factory').then((module) => ({ default: module.ReaFactory }))
+);
 const ModelBench = React.lazy(() => import('@renderer/pages/ModelBench'));
 const AgentSettings = React.lazy(() => import('@renderer/pages/settings/AgentSettings'));
 const AgentRepairPage = React.lazy(() => import('@renderer/pages/settings/AgentSettings/AgentRepairPage'));
@@ -77,6 +80,7 @@ const PanelRoute: React.FC<{ layout: React.ReactElement }> = ({ layout }) => {
           <Route index element={<Navigate to='/guid' replace />} />
           <Route path='/guid' element={withRouteFallback(Guid)} />
           <Route path='/factory' element={withRouteFallback(Factory)} />
+          <Route path='/factory-rea' element={withRouteFallback(ReaFactory)} />
           <Route path='/model-bench' element={withRouteFallback(ModelBench)} />
           <Route path='/conversation/:id' element={withRouteFallback(Conversation)} />
           <Route

@@ -1,0 +1,25 @@
+Publication copy: local filesystem paths use placeholders; test results are unchanged.
+
+
+Running 13 tests using 1 worker
+
+(node:16131) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:16131) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[E2E] Launching DEV app from: <PROJECT_ROOT>/AionUi
+  ✓   1 tests/e2e/specs/app-launch.e2e.ts:11:7 › App Launch › window opens and has a title (4.8s)
+  ✓   2 tests/e2e/specs/app-launch.e2e.ts:16:7 › App Launch › renderer loads successfully (60ms)
+  ✓   3 tests/e2e/specs/app-launch.e2e.ts:22:7 › App Launch › no uncaught console errors on load (19ms)
+  ✓   4 tests/e2e/specs/factory-rea.e2e.ts:193:7 › REA product deconstruction › scans, traces a real feature, downloads verifiable history and transfers saved findings (18.9s)
+  ✓   5 tests/e2e/specs/factory-rea.e2e.ts:272:7 › REA product deconstruction › stops the active scan after a tab switch, retries and invalidates changed targets (14.4s)
+  ✓   6 tests/e2e/specs/factory-rea.e2e.ts:315:7 › REA product deconstruction › traces an ASAR and retains its overview when the investigation question changes (10.8s)
+  ✓   7 tests/e2e/specs/factory-rea.e2e.ts:368:9 › REA product deconstruction › shows an actionable failure for a missing directory without fabricating evidence (3.9s)
+  ✓   8 tests/e2e/specs/factory-rea.e2e.ts:368:9 › REA product deconstruction › shows an actionable failure for a unsupported loose JavaScript file without fabricating evidence (3.9s)
+  ✓   9 tests/e2e/specs/factory-rea.e2e.ts:381:7 › REA product deconstruction › explains mocked tool readiness failures and rechecks before enabling a scan (1.3s)
+  ✓  10 tests/e2e/specs/factory-startup.e2e.ts:4:7 › Factory desktop startup › renderer reaches the real backend health and system APIs (8ms)
+  ✓  11 tests/e2e/specs/factory-startup.e2e.ts:21:7 › Factory desktop startup › all four stages switch the draft to only their matching brief (663ms)
+  ✓  12 tests/e2e/specs/factory-startup.e2e.ts:49:5 › production projects persist artifacts and invalidate downstream revisions (2.5s)
+  ✓  13 tests/e2e/specs/factory-startup.e2e.ts:90:5 › production permission warning opens the running stage rather than the selected stage (144ms)
+
+  13 passed (1.0m)

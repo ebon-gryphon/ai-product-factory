@@ -14,3 +14,9 @@ playwright-report/
 # Upstream promotional media is retained locally, not required by the app.
 /AionUi/resources/*.gif
 /AionUi/resources/*.mp4
+
+# Raw validation captures contain local workspace paths; keep them on this machine.
+/docs/validation/2026-10-21-rea/screenshots/rea-asar-question.png
+/docs/validation/2026-10-21-rea/screenshots/rea-feature-trace.png
+/docs/validation/2026-10-21-rea/screenshots/rea-mobile.png
+/docs/validation/2026-10-21-rea/screenshots/rea-stale-target.png

@@ -10,6 +10,7 @@ import type { SlashCommandItem } from '@/common/chat/slash/types';
 import type { IMcpServer, TProviderWithModel } from '@/common/config/storage';
 import { resolveLocaleKey } from '@/common/utils';
 import type { AssistantDetail } from '@/common/types/agent/assistantTypes';
+import factoryModel from '@renderer/assets/logos/brand/app.png';
 
 import { useInputFocusRing } from '@/renderer/hooks/chat/useInputFocusRing';
 import { appendPromptToDraft } from '@/renderer/hooks/chat/useSendBoxDraft';
@@ -671,7 +672,18 @@ const GuidPage: React.FC = () => {
         <div className={styles.guidLayout}>
           <header className={styles.factoryHeader}>
             <span className={styles.factoryEyebrow}>{t('guid.factory.eyebrow')}</span>
-            <h1>{t('guid.factory.title')}</h1>
+            <div className={styles.factoryTitleRow}>
+              <img
+                src={factoryModel}
+                className={styles.factoryHeroModel}
+                width={96}
+                height={96}
+                alt=''
+                aria-hidden='true'
+                draggable={false}
+              />
+              <h1>{t('guid.factory.title')}</h1>
+            </div>
             <p>{t('guid.factory.subtitle')}</p>
             <Button type='primary' onClick={() => navigate('/factory')}>
               {t('guid.production.open')}
@@ -679,8 +691,9 @@ const GuidPage: React.FC = () => {
           </header>
           <FactoryLaunchpad
             disabled={guidInput.loading}
+            selectedPrompt={guidInput.input}
             onSelect={(prompt) => {
-              guidInput.setInput((draft) => appendPromptToDraft(draft, prompt));
+              guidInput.setInput(prompt);
               guidInput.handleTextareaFocus();
             }}
           />

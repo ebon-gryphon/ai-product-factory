@@ -20,6 +20,35 @@ pub struct FactoryArtifact {
     pub source: String,
     pub conversation_id: Option<String>,
     pub based_on: Vec<String>,
+    #[serde(default)]
+    pub rea: Option<FactoryReaEvidence>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FactoryReaCandidate {
+    pub node_id: String,
+    pub kind: String,
+    pub label: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FactoryReaEvidence {
+    pub evidence_id: String,
+    pub file_name: String,
+    pub sha256: String,
+    pub bytes: u64,
+    pub operation: String,
+    pub summary: serde_json::Value,
+    pub limitations: Vec<String>,
+    pub coverage: serde_json::Value,
+    pub candidates: Vec<FactoryReaCandidate>,
+    pub candidate_total: usize,
+}
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FactoryReaDirection {
+    Incoming,
+    Outgoing,
+    #[default]
+    Both,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FactoryStage {
@@ -34,6 +63,19 @@ pub struct FactoryCheck {
     pub text: String,
     pub passed: bool,
 }
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum FactoryWorkflow {
+    #[default]
+    Production,
+    Rea,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FactoryReaStatus {
+    pub available: bool,
+    pub version: Option<String>,
+    pub error: Option<String>,
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FactoryProject {
     pub id: String,
@@ -42,6 +84,10 @@ pub struct FactoryProject {
     pub assistant_id: String,
     pub workspace: String,
     pub model: Option<ProviderWithModel>,
+    #[serde(default)]
+    pub workflow: FactoryWorkflow,
+    #[serde(default)]
+    pub target_path: String,
     pub stages: Vec<FactoryStage>,
     pub checks: Vec<FactoryCheck>,
     pub archived: bool,
@@ -58,6 +104,10 @@ pub struct CreateFactoryProject {
     #[serde(default)]
     pub workspace: String,
     pub model: Option<ProviderWithModel>,
+    #[serde(default)]
+    pub workflow: FactoryWorkflow,
+    #[serde(default)]
+    pub target_path: String,
 }
 #[derive(Debug, Clone, Deserialize)]
 pub struct FactoryActionRequest {
@@ -72,6 +122,10 @@ pub enum FactoryAction {
         stage: usize,
         #[serde(default)]
         automatic: bool,
+        #[serde(default)]
+        rea_seed: Option<String>,
+        #[serde(default)]
+        rea_direction: FactoryReaDirection,
     },
     Pause,
     Save {
@@ -91,6 +145,10 @@ pub enum FactoryAction {
         assistant_id: String,
         workspace: String,
         model: Option<ProviderWithModel>,
+        #[serde(default)]
+        workflow: FactoryWorkflow,
+        #[serde(default)]
+        target_path: String,
     },
     Checks {
         checks: Vec<FactoryCheck>,

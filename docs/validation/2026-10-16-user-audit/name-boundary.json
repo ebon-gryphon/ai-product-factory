@@ -1,0 +1,14 @@
+[
+  {
+    "chinese_characters": 66,
+    "utf8_bytes": 198,
+    "status": 200,
+    "error": null
+  },
+  {
+    "chinese_characters": 67,
+    "utf8_bytes": 201,
+    "status": 400,
+    "error": "FACTORY_INVALID_INPUT"
+  }
+]

@@ -111,3 +111,89 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.reaEnvironment {
+  margin-bottom: 20px;
+}
+
+.reaWorkflow {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 20px 0;
+}
+.question {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--color-fill-1);
+  overflow-wrap: anywhere;
+}
+.question h3 {
+  margin-top: 0;
+}
+.question p {
+  white-space: pre-wrap;
+}
+.evidenceCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.breakText {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  background: var(--color-fill-1);
+  border-radius: 10px;
+}
+.metric strong {
+  font-size: 24px;
+}
+.metric span {
+  color: var(--color-text-3);
+}
+.limitations {
+  max-height: 220px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+
+.buildingTitle {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.buildingTitleIcon {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+.buildingHeading {
+  min-width: 0;
+  max-width: 100%;
+}
+.buildingTitleText {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+  .buildingTitleIcon {
+    width: 64px;
+    height: 64px;
+  }
+}
