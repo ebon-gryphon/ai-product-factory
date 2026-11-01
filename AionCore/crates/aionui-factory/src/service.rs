@@ -10,6 +10,8 @@ use std::{
 };
 use tokio::sync::{Mutex, Notify, Semaphore};
 
+const VERSION_LIMIT: usize = 100;
+
 #[derive(Debug, thiserror::Error)]
 pub enum FactoryError {
     #[error("FACTORY_NOT_FOUND")]
@@ -162,7 +164,7 @@ fn append(
     if content.trim().is_empty() || content.len() > 200_000 {
         return Err(FactoryError::Invalid("FACTORY_INVALID_ARTIFACT"));
     }
-    if project.stages[stage].versions.len() >= 100 {
+    if project.stages[stage].versions.len() >= VERSION_LIMIT {
         return Err(FactoryError::Invalid("FACTORY_VERSION_LIMIT"));
     }
     let based_on = project.stages[..stage]
@@ -360,6 +362,14 @@ impl FactoryService {
                         || !matches!(s.status, FactoryStageStatus::Review | FactoryStageStatus::Approved)
                 }) {
                     return Err(FactoryError::Invalid("FACTORY_PREREQUISITE"));
+                }
+                // Preflight the entire requested pipeline before any potentially billable work.
+                let end = if automatic { 4 } else { stage + 1 };
+                if project.stages[stage..end]
+                    .iter()
+                    .any(|s| s.versions.len() >= VERSION_LIMIT)
+                {
+                    return Err(FactoryError::Invalid("FACTORY_VERSION_LIMIT"));
                 }
                 let permit = self
                     .slots

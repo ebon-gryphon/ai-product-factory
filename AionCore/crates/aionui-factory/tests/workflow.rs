@@ -970,3 +970,60 @@ async fn stale_pause_after_completion_is_a_read_only_noop() {
     assert_eq!(result.revision, done.revision);
     assert_eq!(result.stages[0].versions[0].id, done.stages[0].versions[0].id);
 }
+
+#[tokio::test]
+async fn full_version_history_rejects_runs_before_executing_or_invalidating_artifacts() {
+    for automatic in [false, true] {
+        let (s, runner, db) = setup().await;
+        let mut p = create(&s).await;
+        for stage in 0..4 {
+            p = action(
+                &s,
+                &p,
+                FactoryAction::Save {
+                    stage,
+                    content: format!("Preserved stage {stage}"),
+                },
+            )
+            .await
+            .unwrap();
+        }
+        let full_stage = if automatic { 3 } else { 0 };
+        let original = p.stages[full_stage].versions[0].clone();
+        p.stages[full_stage].versions.extend((1..100).map(|n| {
+            let mut version = original.clone();
+            version.id = format!("history-{n}");
+            version
+        }));
+        let previous_revision = p.revision;
+        p.revision += 1;
+        SqliteFactoryRepository::new(db.pool().clone())
+            .replace(
+                &FactoryRecord {
+                    id: p.id.clone(),
+                    user_id: USER.into(),
+                    revision: p.revision,
+                    updated_at: p.updated_at,
+                    payload: serde_json::to_string(&p).unwrap(),
+                },
+                previous_revision,
+            )
+            .await
+            .unwrap();
+        let result = action(
+            &s,
+            &p,
+            FactoryAction::Run {
+                stage: 0,
+                automatic,
+                rea_seed: None,
+                rea_direction: FactoryReaDirection::Both,
+            },
+        )
+        .await;
+        assert!(matches!(result, Err(FactoryError::Invalid("FACTORY_VERSION_LIMIT"))));
+        let after = s.get(USER, &p.id).await.unwrap();
+        assert_eq!(serde_json::to_value(after).unwrap(), serde_json::to_value(p).unwrap());
+        assert!(runner.prompts.lock().await.is_empty());
+    }
+}
