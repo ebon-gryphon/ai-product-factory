@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Message } from '@arco-design/web-react';
 import type { IMcpServer } from '@/common/config/storage';
 import { useGuidSend, type GuidSendDeps } from '@/renderer/pages/guid/hooks/useGuidSend';
 
@@ -76,10 +77,57 @@ const createDeps = (): GuidSendDeps => ({
 
 describe('useGuidSend', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     createConversationInvokeMock.mockReset();
     createConversationInvokeMock.mockResolvedValue({ id: 'conv-1' });
     swrMutateMock.mockReset();
     swrMutateMock.mockResolvedValue(undefined);
+  });
+
+  it('preserves the draft, attachments and workspace when no provider model is configured', async () => {
+    const deps = createDeps();
+    deps.selectedAssistantBackend = 'aionrs';
+    const { result } = renderHook(() => useGuidSend(deps));
+    await act(async () => result.current.sendMessageHandler());
+    await waitFor(() => expect(deps.setLoading).toHaveBeenLastCalledWith(false));
+    expect([deps.setInput, deps.setFiles, deps.setDir].some((setter) => vi.mocked(setter).mock.calls.length)).toBe(
+      false
+    );
+    expect(deps.navigate).not.toHaveBeenCalled();
+  });
+
+  it.each(['claude', 'aionrs'])('keeps the draft and reports an empty %s conversation response', async (backend) => {
+    const deps = createDeps();
+    deps.selectedAssistantBackend = backend;
+    deps.current_model = { id: 'p1', name: 'Provider', use_model: 'test-model' } as never;
+    createConversationInvokeMock.mockResolvedValue(null);
+    const { result } = renderHook(() => useGuidSend(deps));
+    await act(async () => result.current.sendMessageHandler());
+    await waitFor(() => expect(deps.setLoading).toHaveBeenLastCalledWith(false));
+    expect(deps.setInput).not.toHaveBeenCalled();
+    expect(Message.error).toHaveBeenCalledWith('conversation.createFailed');
+  });
+
+  it('keeps the draft when assistant selection disappears before sending', async () => {
+    const deps = createDeps();
+    deps.selectedAssistantId = null;
+    const { result } = renderHook(() => useGuidSend(deps));
+    await act(async () => result.current.sendMessageHandler());
+    await waitFor(() => expect(deps.setLoading).toHaveBeenLastCalledWith(false));
+    expect(deps.setInput).not.toHaveBeenCalled();
+    expect(createConversationInvokeMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps a failed draft available for a successful retry', async () => {
+    const deps = createDeps();
+    createConversationInvokeMock.mockRejectedValueOnce(new Error('Backend unavailable'));
+    const { result } = renderHook(() => useGuidSend(deps));
+    await act(async () => result.current.sendMessageHandler());
+    await waitFor(() => expect(deps.setLoading).toHaveBeenLastCalledWith(false));
+    expect(deps.setInput).not.toHaveBeenCalled();
+    await act(async () => result.current.sendMessageHandler());
+    await waitFor(() => expect(deps.setInput).toHaveBeenCalledWith(''));
+    expect(deps.navigate).toHaveBeenCalledWith('/conversation/conv-1');
   });
 
   it('passes selected mode into assistant conversation overrides when creating a preset ACP conversation', async () => {
