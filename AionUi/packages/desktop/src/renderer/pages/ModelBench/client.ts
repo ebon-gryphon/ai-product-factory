@@ -89,23 +89,49 @@ export async function runComparison(
 }
 
 const HISTORY_KEY = 'modelBench.history';
+
+function validResult(value: unknown): value is BenchResult {
+  if (!value || typeof value !== 'object') return false;
+  const result = value as Partial<BenchResult>;
+  return Boolean(
+    result.target &&
+    typeof result.target.provider_id === 'string' &&
+    typeof result.target.provider_name === 'string' &&
+    typeof result.target.model === 'string' &&
+    typeof result.text === 'string' &&
+    typeof result.status === 'string' &&
+    ['waiting', 'running', 'done', 'error', 'stopped'].includes(result.status) &&
+    typeof result.elapsed === 'number' &&
+    Number.isFinite(result.elapsed) &&
+    result.elapsed >= 0 &&
+    (result.startedAt === undefined || (typeof result.startedAt === 'number' && Number.isFinite(result.startedAt))) &&
+    (result.error === undefined || typeof result.error === 'string')
+  );
+}
+
+function validRecord(value: unknown): value is BenchRecord {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Partial<BenchRecord>;
+  return Boolean(
+    typeof record.id === 'string' &&
+    record.id &&
+    typeof record.created === 'number' &&
+    Number.isFinite(new Date(record.created).getTime()) &&
+    typeof record.prompt === 'string' &&
+    Array.isArray(record.results) &&
+    record.results.length > 0 &&
+    record.results.length <= 4 &&
+    record.results.every(validResult)
+  );
+}
+
 export async function loadHistory(): Promise<BenchRecord[]> {
   const envelope = (await (await request(`/api/settings/client?keys=${HISTORY_KEY}`)).json()) as {
     data: Record<string, unknown>;
   };
   const records = envelope.data[HISTORY_KEY];
-  return Array.isArray(records)
-    ? records
-        .filter((record): record is BenchRecord =>
-          Boolean(
-            record &&
-            typeof record.id === 'string' &&
-            typeof record.prompt === 'string' &&
-            Array.isArray(record.results)
-          )
-        )
-        .slice(0, 5)
-    : [];
+  // Settings can outlive the app version that wrote them; validate nested UI data before restoring it.
+  return Array.isArray(records) ? records.filter(validRecord).slice(0, 5) : [];
 }
 
 export async function saveRecord(record: BenchRecord): Promise<BenchRecord[]> {
