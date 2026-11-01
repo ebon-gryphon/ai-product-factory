@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Button, Checkbox, Empty, Input, Message, Modal, Progress, Spin, Tag } from '@arco-design/web-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -66,6 +66,12 @@ export default function Factory({ workflow = 'production' }: { workflow?: Workfl
   const [busy, setBusy] = useState(false);
   const [archived, setArchived] = useState(false);
   const [checkText, setCheckText] = useState('');
+  useEffect(() => {
+    // Browser history can change the selected project without using the sidebar.
+    setForm(null);
+    setStage(0);
+    setCheckText('');
+  }, [selected, workflow]);
   const titles = isRea
     ? (['evidence', 'flow', 'architecture', 'reconstruction'] as const).map((key) => t(`guid.rea.stages.${key}`))
     : stageKeys.map((key) => t(`guid.factory.${key}.title`));
@@ -231,6 +237,7 @@ export default function Factory({ workflow = 'production' }: { workflow?: Workfl
                 <div className={styles.row}>
                   {isRea && (
                     <ReaTransfer
+                      key={project.id}
                       project={project}
                       titles={titles}
                       onCreated={async (created) => {

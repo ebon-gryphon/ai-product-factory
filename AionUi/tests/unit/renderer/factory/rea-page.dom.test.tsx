@@ -278,6 +278,19 @@ describe('REA investigation workflow', () => {
     });
     expect(state.act).not.toHaveBeenCalled();
   });
+  it('closes a production transfer when browser navigation selects a different source project', async () => {
+    const view = render(<Factory workflow='rea' />);
+    fireEvent.click(screen.getByRole('button', { name: locale.rea.toProduction }));
+    expect(screen.getByRole('button', { name: locale.rea.createProduction })).toBeVisible();
+
+    state.detail = { ...state.projects[0], id: 'other-rea-project', name: 'Other investigation' };
+    state.projects.push(state.detail);
+    state.selected = state.detail.id;
+    view.rerender(<Factory workflow='rea' />);
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: locale.rea.createProduction })).toBeNull());
+    expect(state.create).not.toHaveBeenCalled();
+  });
   it('ignores cached manual drafts for original overview evidence', () => {
     sessionStorage.setItem('factory.draft.rea-project.0.evidence-version', 'Fabricated evidence');
     render(<Factory workflow='rea' />);
@@ -300,6 +313,24 @@ describe('REA investigation workflow', () => {
     fireEvent.change(artifact, { target: { value: 'Revised requirement' } });
     expect(artifact).not.toHaveAttribute('readonly');
     expect(screen.getByRole('button', { name: locale.production.saveVersion })).toBeEnabled();
+  });
+  it('closes a project edit when browser navigation selects a different project', async () => {
+    state.detail = state.projects[1];
+    state.selected = 'production-project';
+    const view = render(<Factory />);
+    fireEvent.click(screen.getByRole('button', { name: locale.production.edit }));
+    const name = screen.getByRole('textbox', { name: locale.production.name });
+    fireEvent.change(name, { target: { value: 'Unsaved first project name' } });
+
+    state.detail = { ...state.projects[1], id: 'second-production-project', name: 'Second project' };
+    state.projects.push(state.detail);
+    state.selected = state.detail.id;
+    view.rerender(<Factory />);
+
+    await waitFor(() => expect(screen.queryByRole('textbox', { name: locale.production.name })).toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: locale.production.edit }));
+    expect(screen.getByRole('textbox', { name: locale.production.name })).toHaveValue('Second project');
+    expect(state.act).not.toHaveBeenCalled();
   });
   it('allows historical evidence viewing and downloads without restoring tool facts', async () => {
     state.detail!.stages[0].versions.unshift({
