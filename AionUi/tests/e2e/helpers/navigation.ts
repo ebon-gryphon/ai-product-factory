@@ -15,8 +15,10 @@ export const ROUTES = {
     gemini: '#/settings/gemini',
     model: '#/settings/model',
     agent: '#/settings/agent',
-    assistants: '#/settings/assistants',
+    assistants: '#/assistants',
     skills: '#/settings/skills',
+    pet: '#/settings/pet',
+    archived: '#/settings/archived',
     tools: '#/settings/tools',
     display: '#/settings/appearance',
     webui: '#/settings/webui',
@@ -118,7 +120,37 @@ export async function navigateTo(page: Page, hash: string): Promise<void> {
     if (!isAlreadyAt(page, hash)) {
       const navItem = page.locator(`[data-settings-path="${settingsPath}"]`);
       await navItem.waitFor({ state: 'visible', timeout: 10_000 });
-      await navItem.click();
+      try {
+        await navItem.click();
+      } catch (error) {
+        const hitTest = await navItem
+          .evaluate((element) => {
+            const box = element.getBoundingClientRect();
+            const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+            const hit = document.elementFromPoint(center.x, center.y);
+            const container = element.closest('.settings-sider');
+            return {
+              viewport: {
+                width: window.innerWidth,
+                height: window.innerHeight,
+                devicePixelRatio: window.devicePixelRatio,
+              },
+              target: {
+                rect: box.toJSON(),
+                path: element.getAttribute('data-settings-path'),
+                zoom: getComputedStyle(element).zoom,
+              },
+              container: container && {
+                rect: container.getBoundingClientRect().toJSON(),
+                scrollTop: container.scrollTop,
+                scrollHeight: container.scrollHeight,
+              },
+              hit: hit && { tag: hit.tagName, className: hit.className, targetContainsHit: element.contains(hit) },
+            };
+          })
+          .catch(() => null);
+        throw new Error(`Settings navigation click failed. Hit test: ${JSON.stringify(hitTest)}`, { cause: error });
+      }
       await page
         .waitForFunction((h) => window.location.hash.includes(h), `/settings/${settingsPath}`, { timeout: 10_000 })
         .catch(() => {});
@@ -175,7 +207,7 @@ export async function goToSettings(page: Page, tab: SettingsTab): Promise<void> 
 export async function goToAssistantSettings(page: Page): Promise<void> {
   await goToSettings(page, 'assistants');
   await page
-    .locator('[data-testid="assistant-list-shell"], [data-testid="assistant-editor-page"]')
+    .locator('[data-testid="assistant-home-shell"], [data-testid="assistant-editor-page"]')
     .first()
     .waitFor({ state: 'visible', timeout: 10_000 });
 }

@@ -8,27 +8,27 @@ E2E tests launch Electron directly (`electron .`), loading pre-built files from 
 
 ```bash
 # Full build (main + preload + renderer)
-bunx electron-vite build
+bun run package
 ```
 
 > `bun run start` (`electron-vite dev`) uses Vite's HMR and hot-reloads automatically.
 > E2E tests do NOT use Vite dev server — they load static files from `out/`.
 
-### 2. Ensure `aioncore` is on PATH
+### 2. Build and select the current `aioncore`
 
 The Electron main process spawns the `aioncore` binary during startup and
 exposes its port to the renderer via `window.__backendPort`. The binary is
-located via `which aioncore`, so it must be reachable from the `PATH`
-inherited by the Playwright runner. If it isn't, `__backendPort` will be `0`
+selected by `AIONUI_BACKEND_BIN` first, then bundled resources, then `PATH`.
+Use the override below to ensure E2E exercises the current checkout. If no binary can be found, `__backendPort` will be `0`
 and every HTTP call from the renderer (or from e2e helpers that use
 `tests/e2e/helpers/httpBridge.ts`) will fail with `Failed to fetch`.
 
 ```bash
-# Install the backend binary (builds to ~/.cargo/bin/aioncore)
-cd ../AionCore && cargo install --path crates/aionui-app
+# Build the backend binary from the current source
+(cd ../AionCore && cargo build -p aionui-app --bin aioncore)
 
-# Make sure it's on PATH when running tests
-export PATH="$HOME/.cargo/bin:$PATH"
+# Point E2E at the binary built from the current checkout (run in AionUi)
+export AIONUI_BACKEND_BIN="$(cd ../AionCore && pwd)/target/debug/aioncore"
 ```
 
 ### 3. Run Tests
@@ -37,8 +37,32 @@ export PATH="$HOME/.cargo/bin:$PATH"
 # All E2E tests
 bun run test:e2e
 
+# REA desktop tests also need the pinned local REA runtime (configured via 配置REA.command).
+# Run in AionUi; this reads only the inert fixtures included in the repository.
+export AIFACTORY_REA_BIN="$(cd ../tools/rea && pwd)/node_modules/.bin/rea"
+bunx playwright test tests/e2e/specs/factory-startup.e2e.ts tests/e2e/specs/factory-rea.e2e.ts
+
 # Specific test file
 npx playwright test --config playwright.config.ts tests/e2e/specs/team-workspace-migration.e2e.ts --reporter=list
+```
+
+### Keep zoom persistence checks isolated
+
+The singleton fixture preserves its Electron window across spec files. Zoom persistence tests change native window state and reload the renderer; run them in a separate Playwright invocation before the factory acceptance group so that state does not leak into unrelated pointer tests.
+
+```bash
+bunx playwright test tests/e2e/features/settings/display/display-persist.e2e.ts
+bunx playwright test tests/e2e/specs/app-launch.e2e.ts tests/e2e/specs/navigation.e2e.ts tests/e2e/specs/factory-startup.e2e.ts tests/e2e/specs/factory-rea.e2e.ts tests/e2e/features/settings/display/theme-switching.e2e.ts tests/e2e/features/settings/system/timeout-config.e2e.ts
+```
+
+Each invocation gets a disposable `userData` root. The factory responsive check resizes the native Electron window and restores its original size, minimum size, and zoom; it does not leave viewport emulation active for later cases.
+
+### Assistant management and language acceptance
+
+The assistant home is `/assistants`, with Enabled, My Assistants, and Official tabs. Manual creation uses the create-button menu; choose an explicit Agent when the disposable profile has no model provider. The following selection covers create, required-name validation, edit, duplicate, delete, persistence, missing-engine recovery, and language switching/persistence without external model inference.
+
+```bash
+bunx playwright test tests/e2e/features/assistants/core-interactions.e2e.ts tests/e2e/features/settings/system/preferences.e2e.ts tests/e2e/features/settings/system/system-persist.e2e.ts --grep 'P0-(1|2|3|5|6|7|8):|TC-PREF-01|TC-PERSIST-01'
 ```
 
 ### 3. View Results
@@ -208,12 +232,12 @@ Failed tests automatically get screenshots attached to the HTML report.
 
 Variables set automatically during test launch:
 
-| Variable                     | Value | Purpose                  |
-| ---------------------------- | ----- | ------------------------ |
-| `AIONUI_E2E_TEST`            | `1`   | App recognizes test mode |
-| `AIONUI_DISABLE_AUTO_UPDATE` | `1`   | No update checks         |
-| `AIONUI_DISABLE_DEVTOOLS`    | `1`   | No DevTools windows      |
-| `AIONUI_CDP_PORT`            | `0`   | CDP disabled             |
+| Variable                     | Value  | Purpose                                            |
+| ---------------------------- | ------ | -------------------------------------------------- |
+| `AIONUI_E2E_TEST`            | `1`    | App recognizes test mode                           |
+| `AIONUI_DISABLE_AUTO_UPDATE` | `1`    | No update checks                                   |
+| `AIONUI_DISABLE_DEVTOOLS`    | `1`    | No DevTools windows                                |
+| `AIONUI_CDP_PORT`            | `9230` | Authenticated single-target browser bridge enabled |
 
 ---
 
@@ -232,7 +256,7 @@ Variables set automatically during test launch:
 
 ```bash
 # Run all E2E locally (dev mode, requires build first)
-bunx electron-vite build && bun run test:e2e
+bun run package && bun run test:e2e
 
 # Run only team tests with list reporter
 bun run test:e2e:team
@@ -256,7 +280,7 @@ E2E_PACKAGED=1 bun run test:e2e
 **Cause:** Source changes not rebuilt.
 
 ```bash
-bunx electron-vite build
+bun run package
 ```
 
 ### `Bridge invoke timeout: xxx`
@@ -265,14 +289,14 @@ bunx electron-vite build
 
 - Check `src/common/adapter/ipcBridge.ts` for the endpoint definition
 - Check the corresponding bridge file (e.g., `src/process/bridge/teamBridge.ts`) for `.provider()` registration
-- Rebuild: `bunx electron-vite build`
+- Rebuild: `bun run package`
 
 ### App launches but page is blank
 
 **Cause:** Renderer build is missing or corrupted.
 
 ```bash
-bunx electron-vite build
+bun run package
 ```
 
 ### Tests are flaky with AI responses

@@ -53,6 +53,7 @@ export async function clickCreateAssistant(page: Page): Promise<void> {
     await editor.waitFor({ state: 'hidden', timeout: 3_000 }).catch(() => {});
   }
   await page.locator('[data-testid="btn-create-assistant"]').click();
+  await page.getByTestId('btn-create-assistant-manual').click();
   await editor.waitFor({ state: 'visible', timeout: 5_000 });
 }
 
@@ -97,13 +98,21 @@ export async function deleteAssistant(page: Page): Promise<void> {
   const confirmBtn = page.locator('.delete-assistant-modal .arco-btn-status-danger');
   await confirmBtn.waitFor({ state: 'visible', timeout: 5_000 });
   await confirmBtn.click();
+  await expect(page.getByTestId('modal-delete-assistant')).toBeHidden();
+  await expect(page.locator(ASSISTANT_EDITOR)).toBeHidden();
+  await expect(page.getByTestId('assistant-home-shell')).toBeVisible();
 }
 
 /** Click the Duplicate link for an assistant. */
 export async function duplicateAssistant(page: Page, assistant_id: string): Promise<void> {
   const dupBtn = page.locator(`[data-testid="btn-duplicate-${assistant_id}"]`);
   const detailResponse = waitForAssistantDetailResponse(page, assistant_id);
-  await dupBtn.click();
+  if (await dupBtn.isVisible()) {
+    await dupBtn.click();
+  } else {
+    await page.getByTestId(`btn-assistant-more-${assistant_id}`).click();
+    await page.getByTestId(`menu-duplicate-${assistant_id}`).click();
+  }
   await page.locator(ASSISTANT_EDITOR).waitFor({ state: 'visible', timeout: 5_000 });
   await detailResponse;
   await page.locator('[data-testid="input-assistant-name"]').waitFor({ state: 'visible', timeout: 5_000 });
@@ -207,19 +216,13 @@ export async function closeAssistantEditor(page: Page): Promise<void> {
 
   const backButton = page.locator('[data-testid="btn-back-assistant-editor"]');
   if (await backButton.isVisible().catch(() => false)) {
-    await Promise.all([
-      editor.waitFor({ state: 'hidden', timeout: 5_000 }).catch(() => {}),
-      backButton.click({ force: true }).catch(() => {}),
-    ]);
+    await Promise.all([editor.waitFor({ state: 'hidden', timeout: 5_000 }).catch(() => {}), backButton.click()]);
     return;
   }
 
   const cancelButton = page.locator('[data-testid="btn-cancel-assistant-editor"]');
   if (await cancelButton.isVisible().catch(() => false)) {
-    await Promise.all([
-      editor.waitFor({ state: 'hidden', timeout: 5_000 }).catch(() => {}),
-      cancelButton.click({ force: true }).catch(() => {}),
-    ]);
+    await Promise.all([editor.waitFor({ state: 'hidden', timeout: 5_000 }).catch(() => {}), cancelButton.click()]);
     return;
   }
 

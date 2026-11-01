@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures';
+import { httpPost, httpDelete } from '../helpers/httpBridge';
 
 test.describe('Factory desktop startup', () => {
   test('renderer reaches the real backend health and system APIs', async ({ page }) => {
@@ -46,6 +47,26 @@ test.describe('Factory desktop startup', () => {
   });
 });
 
+test('a missing API model keeps the user draft after a send attempt', async ({ page }) => {
+  await page.evaluate(() => {
+    window.location.hash = '#/guid';
+  });
+  const assistant = page.locator('[data-assistant-backend="aionrs"]').first();
+  if (!(await assistant.isVisible())) {
+    await page.getByTestId('assistant-more-btn').click();
+  }
+  await assistant.click();
+  const draft = page.locator('textarea').first();
+  await draft.fill('Keep this draft when there is no model');
+  await page.getByTestId('guid-send-btn').click();
+  await expect(
+    page.getByText(/未配置模型，请前往设置页面配置|No model configured[.] Please configure in settings/i)
+  ).toBeVisible();
+  await expect(draft).toHaveValue('Keep this draft when there is no model');
+  await expect(page).toHaveURL(/#\/guid$/);
+  await draft.fill('');
+});
+
 test('production projects persist artifacts and invalidate downstream revisions', async ({ page }) => {
   await page.evaluate(() => {
     window.location.hash = '#/factory';
@@ -89,7 +110,15 @@ test('production projects persist artifacts and invalidate downstream revisions'
 
 test('production permission warning opens the running stage rather than the selected stage', async ({ page }) => {
   const projectId = 'permission-routing-fixture';
-  const activeId = 'factory-active-conversation';
+  // Create an actual stored conversation: a fabricated ID is correctly redirected
+  // away after the conversation page receives 404, which races the URL assertion.
+  // No model inference is started by creating this empty API conversation.
+  const conversation = await httpPost<{ id: string }>(page, '/api/conversations', {
+    type: 'aionrs',
+    name: 'Factory active stage acceptance',
+    extra: {},
+  });
+  const activeId = conversation.id;
   const projectRoute = `**/api/factory/projects/${projectId}`;
   const confirmationRoute = `**/api/conversations/${activeId}/confirmations`;
   await page.route(projectRoute, (route) =>
@@ -134,6 +163,7 @@ test('production permission warning opens the running stage rather than the sele
   } finally {
     await page.unroute(projectRoute);
     await page.unroute(confirmationRoute);
+    await httpDelete(page, `/api/conversations/${activeId}`);
     await page.evaluate(() => {
       window.location.hash = '#/factory';
     });

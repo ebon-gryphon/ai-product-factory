@@ -323,7 +323,9 @@ export const test = base.extend<Fixtures>({
     // own `page` fixture, which we override for Electron — so we do it manually.
     if (testInfo.status !== testInfo.expectedStatus && mainPage && !mainPage.isClosed()) {
       try {
-        const screenshot = await mainPage.screenshot();
+        const screenshotPath = testInfo.outputPath('screenshot-on-failure.png');
+        fs.mkdirSync(path.dirname(screenshotPath), { recursive: true });
+        const screenshot = await mainPage.screenshot({ path: screenshotPath });
         await testInfo.attach('screenshot-on-failure', {
           body: screenshot,
           contentType: 'image/png',

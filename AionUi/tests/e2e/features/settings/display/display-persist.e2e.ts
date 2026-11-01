@@ -43,13 +43,6 @@ async function reloadAndGoToDisplay(page: import('@playwright/test').Page): Prom
   await waitForSettle(page);
 }
 
-async function activeThemeCardIndex(page: import('@playwright/test').Page): Promise<number> {
-  return page.evaluate(() => {
-    const cards = Array.from(document.querySelectorAll<HTMLDivElement>('.grid > div.cursor-pointer'));
-    return cards.findIndex((card) => card.className.includes('border-[var(--color-primary)]'));
-  });
-}
-
 test.describe('Display settings persistence across reload', () => {
   test.setTimeout(60_000);
 
@@ -59,14 +52,16 @@ test.describe('Display settings persistence across reload', () => {
   });
 
   test('theme persists after reload', async ({ page }) => {
-    const themeGroup = page.locator('[role="radiogroup"]');
-    await themeGroup.waitFor({ state: 'visible', timeout: 10_000 });
+    await expect(page.getByTestId('theme-card-light')).toBeVisible();
+    const initialSelection = await page
+      .locator('[data-testid^="theme-card-"][data-active="true"]')
+      .getAttribute('data-testid');
 
     const initialTheme = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
     expect(initialTheme).toBeTruthy();
 
     const targetTheme = initialTheme === 'light' ? 'dark' : 'light';
-    const targetButton = themeGroup.locator('[role="radio"][aria-checked="false"]');
+    const targetButton = page.getByTestId(`theme-card-${targetTheme}`);
     await targetButton.click();
 
     await page.waitForFunction(
@@ -81,10 +76,8 @@ test.describe('Display settings persistence across reload', () => {
     expect(afterReload).toBe(targetTheme);
 
     // Restore original theme
-    const revertGroup = page.locator('[role="radiogroup"]');
-    await revertGroup.waitFor({ state: 'visible', timeout: 10_000 });
-    const revertButton = revertGroup.locator('[role="radio"][aria-checked="false"]');
-    await revertButton.click();
+    expect(initialSelection).toBeTruthy();
+    await page.getByTestId(initialSelection!).click();
     await page.waitForFunction(
       (expected) => document.documentElement.getAttribute('data-theme') === expected,
       initialTheme,
@@ -92,7 +85,7 @@ test.describe('Display settings persistence across reload', () => {
     );
   });
 
-  test('zoom scale persists after reload', async ({ page }) => {
+  test('zoom scale persists after reload in both the control and the native window', async ({ page, electronApp }) => {
     const label = percentLabel(page);
     await expect(label).toBeVisible({ timeout: 5_000 });
 
@@ -104,15 +97,26 @@ test.describe('Display settings persistence across reload', () => {
       return;
     }
     await plus.click();
-    await waitForSettle(page, 1_000);
+    await expect.poll(() => currentPercent(page)).toBeGreaterThan(baseline);
+    // Two increments avoid 100%, where a lost native zoom would be invisible.
+    await plus.click();
+    await expect.poll(() => currentPercent(page)).toBe(baseline + 10);
 
     const afterClick = await currentPercent(page);
+    const readNativeZoom = () =>
+      electronApp.evaluate(({ BrowserWindow }) => {
+        const window = BrowserWindow.getAllWindows().find((item) => !item.webContents.getURL().startsWith('devtools:'));
+        if (!window) throw new Error('No main window to check actual rendered zoom');
+        return window.webContents.getZoomFactor();
+      });
+    await expect.poll(readNativeZoom).toBeCloseTo(afterClick / 100);
     expect(afterClick).toBeGreaterThan(baseline);
 
     await reloadAndGoToDisplay(page);
 
     const afterReload = await currentPercent(page);
     expect(afterReload).toBe(afterClick);
+    await expect.poll(readNativeZoom).toBeCloseTo(afterClick / 100);
 
     // Restore via reset button
     const reset = resetButton(page);
@@ -124,7 +128,7 @@ test.describe('Display settings persistence across reload', () => {
   });
 
   test('CSS theme selection persists after reload', async ({ page }) => {
-    const cards = page.locator('.grid > div.cursor-pointer');
+    const cards = page.locator('[data-testid^="theme-card-"]');
     await cards.first().waitFor({ state: 'visible', timeout: 15_000 });
 
     const cardCount = await cards.count();
@@ -134,7 +138,10 @@ test.describe('Display settings persistence across reload', () => {
     }
 
     // Find current active card index
-    const activeIndex = await activeThemeCardIndex(page);
+    const activeId = await page.locator('[data-testid^="theme-card-"][data-active="true"]').getAttribute('data-testid');
+    const activeIndex = await cards.evaluateAll((elements) =>
+      elements.findIndex((element) => element.getAttribute('data-active') === 'true')
+    );
 
     const targetIndex = activeIndex <= 0 ? 1 : 0;
     const targetCard = cards.nth(targetIndex);
@@ -142,26 +149,18 @@ test.describe('Display settings persistence across reload', () => {
 
     await page.locator('.arco-message-success').first().waitFor({ state: 'visible', timeout: 5_000 });
 
-    // Confirm selection took effect before reload
-    await page.waitForFunction(
-      (idx) => {
-        const card = document.querySelectorAll('.grid > div.cursor-pointer')[idx];
-        return card?.className.includes('border-[var(--color-primary)]');
-      },
-      targetIndex,
-      { timeout: 5_000 }
-    );
+    // Assert the selected theme, rather than depending on presentation classes.
+    await expect(targetCard).toHaveAttribute('data-active', 'true');
 
     await reloadAndGoToDisplay(page);
 
     // Verify the same card is still active after reload
     await cards.first().waitFor({ state: 'visible', timeout: 15_000 });
-    const afterReloadCls = await cards.nth(targetIndex).getAttribute('class');
-    expect(afterReloadCls).toContain('border-[var(--color-primary)]');
+    await expect(cards.nth(targetIndex)).toHaveAttribute('data-active', 'true');
 
     // Restore original active theme
-    if (activeIndex >= 0) {
-      await cards.nth(activeIndex).click();
+    if (activeId) {
+      await page.getByTestId(activeId).click();
       await page
         .locator('.arco-message-success')
         .first()

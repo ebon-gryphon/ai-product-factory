@@ -41,20 +41,22 @@ test.describe('Guid Page', () => {
 
 test.describe('Settings Pages', () => {
   const tabs: { tab: SettingsTab; name: string }[] = [
-    { tab: 'gemini', name: 'Gemini Settings' },
     { tab: 'model', name: 'Model Settings' },
     { tab: 'agent', name: 'Agent/ACP Settings' },
+    { tab: 'skills', name: 'Skills Settings' },
     { tab: 'tools', name: 'Tools/MCP Settings' },
     { tab: 'display', name: 'Display Settings' },
     { tab: 'webui', name: 'WebUI Settings' },
+    { tab: 'pet', name: 'Desktop Pet Settings' },
     { tab: 'system', name: 'System Settings' },
+    { tab: 'archived', name: 'Archived Items' },
     { tab: 'about', name: 'About Page' },
   ];
 
   for (const { tab, name } of tabs) {
     test(`${name} loads`, async ({ page }) => {
       await goToSettings(page, tab);
-      await expectUrlContains(page, tab);
+      await expectUrlContains(page, ROUTES.settings[tab]);
       const body = await page.locator('body').textContent();
       expect(body!.length).toBeGreaterThan(10);
     });
@@ -82,4 +84,25 @@ test.describe('Sidebar Navigation', () => {
     await goToGuid(page);
     expect(page.url()).toContain('guid');
   });
+});
+
+// Exercise the real factory sidebar entries, including their shipped image assets.
+test.describe('Factory Sidebar', () => {
+  for (const { title, route } of [
+    { title: /^(生产项目|Production projects)$/i, route: '#/factory' },
+    { title: /^(拆解台|Deconstruction Desk)$/i, route: '#/factory-rea' },
+    { title: /^(模型对比台|Model comparison)$/i, route: '#/model-bench' },
+  ]) {
+    test(`${route} loads through its sidebar button`, async ({ page }) => {
+      await goToGuid(page);
+      const entry = page.getByRole('button', { name: title });
+      await entry.click();
+      await expect(page).toHaveURL(new RegExp(route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'));
+      await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
+      const image = entry.locator('img');
+      await expect
+        .poll(() => image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0))
+        .toBe(true);
+    });
+  }
 });

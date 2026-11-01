@@ -8,7 +8,7 @@ import zh from '../../../packages/desktop/src/renderer/services/i18n/locales/zh-
 import en from '../../../packages/desktop/src/renderer/services/i18n/locales/en-US/guid.json';
 
 const fixturePath = path.resolve(__dirname, '../../../../docs/validation/2026-10-21-rea/fixture');
-const validationPath = path.resolve(__dirname, '../../../../docs/validation/2026-10-21-rea/screenshots');
+const validationPath = path.resolve(__dirname, '../results/rea-screenshots');
 function labels(...values: string[]): RegExp {
   return new RegExp(`^(?:${values.map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`, 'i');
 }
@@ -231,13 +231,56 @@ test.describe('REA product deconstruction', () => {
     await page.screenshot({ path: path.join(validationPath, 'rea-evidence-detail.png'), fullPage: true });
     await page.getByRole('heading', { name: labels(zh.rea.title, en.rea.title), level: 1 }).scrollIntoViewIfNeeded();
     await page.screenshot({ path: path.join(validationPath, 'rea-feature-trace.png'), fullPage: true });
-    const desktopViewport = page.viewportSize() || { width: 1280, height: 900 };
-    await page.setViewportSize({ width: 390, height: 844 });
-    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
-    await expect(page.getByRole('button', { name: traceName })).toBeVisible();
-    await page.getByRole('heading', { name: labels(zh.rea.title, en.rea.title), level: 1 }).scrollIntoViewIfNeeded();
-    await page.screenshot({ path: path.join(validationPath, 'rea-mobile.png'), fullPage: true });
-    await page.setViewportSize(desktopViewport);
+    const desktopWindow = await electronApp.evaluate(({ BrowserWindow }) => {
+      const window = BrowserWindow.getAllWindows().find((item) => !item.webContents.getURL().startsWith('devtools:'));
+      if (!window) throw new Error('No main window for responsive inspection');
+      return {
+        contentSize: window.getContentSize(),
+        minimumSize: window.getMinimumSize(),
+        zoomFactor: window.webContents.getZoomFactor(),
+      };
+    });
+    const desktopMetrics = await page.evaluate(() => ({
+      width: window.innerWidth,
+      height: window.innerHeight,
+      dpr: window.devicePixelRatio,
+    }));
+    try {
+      // Resize the actual Electron window. Page viewport emulation overrides DPR
+      // and can leave CDP click coordinates inconsistent with Electron's zoom.
+      await electronApp.evaluate(({ BrowserWindow }) => {
+        const window = BrowserWindow.getAllWindows().find(
+          (item) => !item.webContents.getURL().startsWith('devtools:')
+        )!;
+        window.setMinimumSize(1, 1);
+        window.webContents.setZoomFactor(1);
+        window.setContentSize(390, 844);
+      });
+      await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(390);
+      await expect
+        .poll(() => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth))
+        .toBe(false);
+      await expect(page.getByRole('button', { name: traceName })).toBeVisible();
+      await page.getByRole('heading', { name: labels(zh.rea.title, en.rea.title), level: 1 }).scrollIntoViewIfNeeded();
+      await page.screenshot({ path: path.join(validationPath, 'rea-mobile.png'), fullPage: true });
+    } finally {
+      await electronApp.evaluate(({ BrowserWindow }, previous) => {
+        const window = BrowserWindow.getAllWindows().find(
+          (item) => !item.webContents.getURL().startsWith('devtools:')
+        )!;
+        window.setContentSize(previous.contentSize[0], previous.contentSize[1]);
+        window.webContents.setZoomFactor(previous.zoomFactor);
+        window.setMinimumSize(previous.minimumSize[0], previous.minimumSize[1]);
+      }, desktopWindow);
+    }
+    await expect
+      .poll(() =>
+        page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight, dpr: window.devicePixelRatio }))
+      )
+      .toEqual(desktopMetrics);
+    console.log(
+      `[REA responsive window restored] ${JSON.stringify({ native: desktopWindow, viewport: desktopMetrics })}`
+    );
 
     await runTool(page, traceName);
     project = await waitForEvidence(page, source.id, 1, 2);
