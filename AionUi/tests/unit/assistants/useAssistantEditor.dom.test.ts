@@ -57,6 +57,7 @@ import { useAssistantEditor } from '@/renderer/hooks/assistant/useAssistantEdito
 import { ipcBridge } from '@/common';
 import type { AssistantListItem } from '@/renderer/pages/settings/AssistantSettings/types';
 import { mutate as swrMutate } from 'swr';
+import { BackendHttpError } from '@/common/adapter/httpBridge';
 
 describe('useAssistantEditor', () => {
   const mockAssistantDetail = {
@@ -378,6 +379,59 @@ describe('useAssistantEditor', () => {
     expect(setActiveAssistantIdMock).toHaveBeenCalledWith('new-id');
     expect(swrMutate).toHaveBeenCalledWith('assistants.list');
     expect(result.current.editVisible).toBe(false);
+  });
+
+  it('explains missing agent or provider configuration without discarding the assistant form', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(ipcBridge.assistants.create.invoke).mockRejectedValueOnce(
+      new BackendHttpError({
+        method: 'POST',
+        path: '/api/assistants',
+        status: 400,
+        body: {
+          code: 'BAD_REQUEST',
+          error:
+            'Cannot create assistant: no providers configured. Add a provider before creating an assistant, or pass an explicit `agent_id` in the request body.',
+        },
+      })
+    );
+    const { result } = renderHook(() => useAssistantEditor(defaultParams));
+    act(() => {
+      result.current.handleCreate();
+      result.current.setEditName('My assistant');
+      result.current.setEditDescription('Keep this description');
+    });
+    await act(async () => result.current.handleSave());
+    expect(mockMessage.error).toHaveBeenCalledWith('settings.assistantAgentOrProviderRequired');
+    expect([result.current.editVisible, result.current.editName, result.current.editDescription]).toEqual([
+      true,
+      'My assistant',
+      'Keep this description',
+    ]);
+    errorSpy.mockRestore();
+  });
+
+  it.each([
+    new Error('private backend detail'),
+    new Error('Cannot create assistant: no providers configured.'),
+    new BackendHttpError({
+      method: 'POST',
+      path: '/api/assistants',
+      status: 400,
+      body: { code: 'BAD_REQUEST', error: 'Other validation failed: private backend detail' },
+    }),
+  ])('keeps unrelated assistant save failures generic without leaking their details (%#)', async (error) => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(ipcBridge.assistants.create.invoke).mockRejectedValueOnce(error);
+    const { result } = renderHook(() => useAssistantEditor(defaultParams));
+    act(() => {
+      result.current.handleCreate();
+      result.current.setEditName('My assistant');
+    });
+    await act(async () => result.current.handleSave());
+    expect(mockMessage.error).toHaveBeenCalledWith('common.failed');
+    expect(result.current.editVisible).toBe(true);
+    errorSpy.mockRestore();
   });
 
   it('calls handleSave for updating existing assistant', async () => {

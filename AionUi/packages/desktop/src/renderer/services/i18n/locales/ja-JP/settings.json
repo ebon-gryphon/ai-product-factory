@@ -199,6 +199,7 @@
   "assistantNoMatch": "現在のフィルター条件に一致するアシスタントはありません。",
   "assistantCreated": "アシスタントを作成しました",
   "assistantNameRequired": "名前は必須です",
+  "assistantAgentOrProviderRequired": "Agent を選択するか、利用可能なモデルプロバイダーを設定してから保存してください。",
   "assistantPromptRequired": "プロンプトは必須です",
   "assistantPromptHint": "このアシスタントのルールを入力してください。注意：Gemini は現在ルールのみサポートしています。",
   "assistantRules": "ルール",

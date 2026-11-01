@@ -199,6 +199,7 @@
   "assistantNoMatch": "No assistants match the current filters.",
   "assistantCreated": "Assistant created",
   "assistantNameRequired": "Name is required",
+  "assistantAgentOrProviderRequired": "Select an Agent, or configure an available model provider before saving.",
   "assistantPromptRequired": "Prompt is required",
   "assistantPromptHint": "Enter rules for this assistant. Note: Gemini currently only supports rules.",
   "assistantRules": "Rules",

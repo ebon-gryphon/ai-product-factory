@@ -199,6 +199,7 @@
   "assistantNoMatch": "Nenhum assistente corresponde aos filtros atuais.",
   "assistantCreated": "Assistente criado",
   "assistantNameRequired": "O nome é obrigatório",
+  "assistantAgentOrProviderRequired": "Selecione um Agent ou configure um provedor de modelos disponível antes de salvar.",
   "assistantPromptRequired": "O prompt é obrigatório",
   "assistantPromptHint": "Insira as regras para este assistente. Nota: Atualmente o Gemini só suporta regras.",
   "assistantRules": "Rules",

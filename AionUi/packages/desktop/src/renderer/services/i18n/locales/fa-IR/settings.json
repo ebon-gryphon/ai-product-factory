@@ -199,6 +199,7 @@
   "assistantNoMatch": "هیچ دستیاری با فیلترهای فعلی مطابقت ندارد.",
   "assistantCreated": "دستیار ایجاد شد",
   "assistantNameRequired": "نام الزامی است",
+  "assistantAgentOrProviderRequired": "یک Agent انتخاب کنید یا پیش از ذخیره، یک ارائه‌دهندهٔ مدل قابل استفاده پیکربندی کنید.",
   "assistantPromptRequired": "پرامپت الزامی است",
   "assistantPromptHint": "قوانین این دستیار را وارد کنید. توجه: جمینای فعلاً فقط از قوانین پشتیبانی می‌کند.",
   "assistantRules": "قوانین",

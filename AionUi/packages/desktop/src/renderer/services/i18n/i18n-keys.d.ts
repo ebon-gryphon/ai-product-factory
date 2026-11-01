@@ -1912,6 +1912,7 @@ export type I18nKey =
   | 'settings.assistant.unknownUser'
   | 'settings.assistant.userRevoked'
   | 'settings.assistantAgentMissing'
+  | 'settings.assistantAgentOrProviderRequired'
   | 'settings.assistantAgentUnavailable'
   | 'settings.assistantAgentUnchecked'
   | 'settings.assistantAvatarBuiltinTab'

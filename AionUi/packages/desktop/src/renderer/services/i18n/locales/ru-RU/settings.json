@@ -207,6 +207,7 @@
   "assistantNoMatch": "Нет ассистентов, соответствующих текущим фильтрам.",
   "assistantCreated": "Ассистент создан",
   "assistantNameRequired": "Название обязательно",
+  "assistantAgentOrProviderRequired": "Выберите Agent или настройте доступного поставщика моделей перед сохранением.",
   "assistantPromptRequired": "Промпт обязателен",
   "assistantPromptHint": "Введите правила для этого ассистента. Примечание: Gemini пока поддерживает только правила.",
   "assistantRules": "Правила",

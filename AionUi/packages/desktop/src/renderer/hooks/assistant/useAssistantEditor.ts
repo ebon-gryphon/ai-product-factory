@@ -1,4 +1,5 @@
 import { ipcBridge } from '@/common';
+import { isBackendHttpError } from '@/common/adapter/httpBridge';
 import type { IMcpServer } from '@/common/config/storage';
 import type { Assistant, CreateAssistantRequest, UpdateAssistantRequest } from '@/common/types/agent/assistantTypes';
 import type { Message } from '@arco-design/web-react';
@@ -530,7 +531,19 @@ export const useAssistantEditor = ({
       setPendingSkills([]);
     } catch (error) {
       console.error('Failed to save assistant:', error);
-      message.error(t('common.failed', { defaultValue: 'Failed' }));
+      const missingAgentOrProvider =
+        isCreating &&
+        !editAgent &&
+        isBackendHttpError(error) &&
+        error.status === 400 &&
+        error.code === 'BAD_REQUEST' &&
+        typeof error.backendMessage === 'string' &&
+        error.backendMessage.startsWith('Cannot create assistant: no providers configured.');
+      message.error(
+        missingAgentOrProvider
+          ? t('settings.assistantAgentOrProviderRequired')
+          : t('common.failed', { defaultValue: 'Failed' })
+      );
     }
   };
 

@@ -199,6 +199,7 @@
   "assistantNoMatch": "沒有符合目前篩選條件的助理。",
   "assistantCreated": "助理已建立",
   "assistantNameRequired": "名稱不能為空",
+  "assistantAgentOrProviderRequired": "請選擇一個 Agent，或先設定可用的模型服務，再儲存。",
   "assistantPromptRequired": "提示詞不能為空",
   "assistantPromptHint": "輸入此助理的規則。注意：Gemini 目前僅支援規則。",
   "assistantRules": "規則",
