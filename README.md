@@ -55,7 +55,7 @@ Demo 支持四个工序的任务切换、草稿编辑和清空；选择工序会
 
 ## 获取项目
 
-仓库：[ebon-gryphon/ai-product-factory](https://github.com/ebon-gryphon/ai-product-factory)，当前为私有仓库。
+仓库：[ebon-gryphon/ai-product-factory](https://github.com/ebon-gryphon/ai-product-factory)，公开可访问。
 
 ```sh
 gh repo clone ebon-gryphon/ai-product-factory

@@ -1,0 +1,261 @@
+{
+  "repo": "<PROJECT_ROOT>",
+  "date": "2026-11-01",
+  "baseCommit": "fd998af22eea28d2cbf51cdddbbf1508d1e53723",
+  "frontend": {
+    "passed": 5074,
+    "skipped": 5,
+    "filesPassed": 530,
+    "filesSkipped": 1,
+    "lineCoverage": 55.32,
+    "log": "/tmp/ai-factory-qa-20261101-frontend-ultimate.log",
+    "pending": false,
+    "exitCode": 0,
+    "failed": 0,
+    "statementsCoverage": 54.48,
+    "branchesCoverage": 49.07,
+    "functionsCoverage": 50.53,
+    "summary": [
+      "Test Files  530 passed | 1 skipped (531)",
+      "Tests  5074 passed | 5 skipped (5079)",
+      "Duration  186.00s (transform 12.62s, setup 22.67s, import 246.36s, tests 162.11s, environment 158.08s)",
+      "Statements   : 54.48% ( 23915/43889 )",
+      "Branches     : 49.07% ( 14467/29478 )",
+      "Functions    : 50.53% ( 4946/9788 )",
+      "Lines        : 55.32% ( 22154/40041 )"
+    ]
+  },
+  "desktopCore": {
+    "passed": 40,
+    "skipped": 2,
+    "log": "/tmp/ai-factory-qa-20261101-main-isolated-final.log"
+  },
+  "display": {
+    "passed": 3,
+    "log": "/tmp/ai-factory-qa-20261101-display-isolated-final.log"
+  },
+  "modelBench": {
+    "passed": 6,
+    "uniqueScenarios": 3,
+    "repeatEach": 2,
+    "log": "/tmp/ai-factory-qa-20261101-bench-native.log"
+  },
+  "staticChecks": {
+    "passed": true,
+    "logs": [
+      "/tmp/ai-factory-qa-20261101-lint-ultimate.log",
+      "/tmp/ai-factory-qa-20261101-format-ultimate.log",
+      "/tmp/ai-factory-qa-20261101-types-ultimate.log",
+      "/tmp/ai-factory-qa-20261101-i18n-ultimate.log"
+    ]
+  },
+  "backend": {
+    "passed": 9423,
+    "failed": 0,
+    "ignored": 53,
+    "targets": 255,
+    "pending": false,
+    "exitCode": 0,
+    "log": "/tmp/ai-factory-qa-20261101-backend.log"
+  },
+  "supplement": {
+    "pending": false,
+    "passed": 13,
+    "uniqueAdditional": 9,
+    "smokeRepeated": 4,
+    "log": "/tmp/ai-factory-qa-20261101-assistants-language-final.log"
+  },
+  "notes": [
+    "完整前端首次带覆盖率运行的cron单测10s超时；单独14项通过，maxWorkers4完整重跑5070全绿，未放宽timeout。",
+    "缩放持久化与功能UI混跑出现Electron CDP命中异常。最终分进程隔离，恢复普通click及原路由断言，非force、不改产品CSS或缩放源码。",
+    "原生CUA独立QA窗口实测95→100→95后远程连接导航成功，95下点击输入框及英文输入精确匹配；中文粘贴及PE替换成功。",
+    "所有E2E使用隔离profile；测试后QA已关闭，用户原应用保持运行。",
+    "验收时用户原有应用未重启；新后端已构建到target/debug/aioncore。完全退出后通过启动脚本重开可选用新后端。",
+    "本记录描述2026-11-01的验收结果，修复代码、回归测试及报告随仓库提交保存。"
+  ],
+  "ignored_backend_tests": [
+    "test acp_agent_agent_status_event_captures_session ... ignored, requires JSON-RPC mock agent",
+    "test acp_agent_error_event_sets_finished ... ignored, requires JSON-RPC mock agent",
+    "test acp_agent_kill_terminates_process ... ignored, requires JSON-RPC mock agent",
+    "test acp_agent_last_activity_updates ... ignored, requires JSON-RPC mock agent",
+    "test acp_agent_model_info_captured ... ignored, requires JSON-RPC mock agent",
+    "test acp_agent_multiple_event_types ... ignored, requires JSON-RPC mock agent",
+    "test acp_agent_receives_stream_events ... ignored, requires JSON-RPC mock agent",
+    "test acp_agent_session_id_captured_from_start ... ignored, requires JSON-RPC mock agent",
+    "test acp_agent_status_transitions ... ignored, requires JSON-RPC mock agent",
+    "test acp_agent_text_content_received ... ignored, requires JSON-RPC mock agent",
+    "test acp_agent_type_is_acp ... ignored, requires JSON-RPC mock agent",
+    "test prelude_io_failure_emits_prompt_hook_warning ... ignored, SessionNewPreludeHook relies on inject_first_message_prefix which currently swallows I/O errors internally; unlocking this test requires surfacing a fallible boundary",
+    "test live_antigravity_cancel_settles_and_recovers ... ignored, spawns the real agy CLI; needs credentials",
+    "test live_antigravity_reports_context_usage ... ignored, spawns the real agy CLI; needs credentials",
+    "test live_antigravity_resumes_after_restart ... ignored, spawns the real agy CLI; needs credentials",
+    "test live_antigravity_survives_a_broken_mcp_server ... ignored, spawns the real agy CLI; needs credentials",
+    "test live_antigravity_team_mcp_tools_call_and_runtime_env ... ignored, spawns the real agy CLI; needs credentials",
+    "test live_antigravity_tool_card_is_renderable ... ignored, spawns the real agy CLI; needs credentials",
+    "test live_antigravity_ws_http_parity ... ignored, spawns the real agy CLI; needs credentials",
+    "test live_claude_ask_user_question_round_trip ... ignored, spawns the real claude CLI; needs credentials",
+    "test live_claude_asks_before_running_a_command ... ignored, spawns the real claude CLI; needs credentials",
+    "test live_claude_cancel_settles_and_recovers ... ignored, spawns the real claude CLI; needs credentials",
+    "test live_claude_names_the_conversation ... ignored, spawns the real claude CLI; needs credentials",
+    "test live_claude_reports_context_usage ... ignored, spawns the real claude CLI; needs credentials",
+    "test live_claude_resumes_after_restart ... ignored, spawns the real claude CLI; needs credentials",
+    "test live_claude_set_model_takes_effect ... ignored, spawns the real claude CLI; needs credentials",
+    "test live_claude_survives_a_broken_mcp_server ... ignored, spawns the real claude CLI; needs credentials",
+    "test live_claude_team_mcp_tools_call_and_runtime_env ... ignored, spawns the real claude CLI; needs credentials",
+    "test live_claude_tool_card_is_renderable ... ignored, spawns the real claude CLI; needs credentials",
+    "test live_claude_workflow_cancel_recovers_conversation ... ignored, spawns the real claude CLI; needs credentials",
+    "test live_claude_workflow_natural_completion_still_finishes ... ignored, spawns the real claude CLI; needs credentials",
+    "test live_claude_workflow_progress_streams ... ignored, spawns the real claude CLI; needs credentials",
+    "test live_claude_ws_http_parity ... ignored, spawns the real claude CLI; needs credentials",
+    "test live_codex_background_work_probe ... ignored, spawns the real codex CLI; needs credentials",
+    "test live_codex_cancel_settles_and_recovers ... ignored, spawns the real codex CLI; needs credentials",
+    "test live_codex_full_access_writes_without_approval ... ignored, spawns the real codex CLI; needs credentials",
+    "test live_codex_produces_a_plan ... ignored, spawns the real codex CLI; needs credentials",
+    "test live_codex_reports_context_usage ... ignored, spawns the real codex CLI; needs credentials",
+    "test live_codex_resumes_after_restart ... ignored, spawns the real codex CLI; needs credentials",
+    "test live_codex_set_model_takes_effect ... ignored, spawns the real codex CLI; needs credentials",
+    "test live_codex_survives_a_broken_mcp_server ... ignored, spawns the real codex CLI; needs credentials",
+    "test live_codex_team_mcp_tools_call_and_runtime_env ... ignored, spawns the real codex CLI; needs credentials",
+    "test live_codex_tool_card_is_renderable ... ignored, spawns the real codex CLI; needs credentials",
+    "test live_codex_ws_http_parity ... ignored, spawns the real codex CLI; needs credentials",
+    "test default_row_and_no_selection_are_different_intents ... ignored, LIVE: spawns the real claude CLI and spends tokens",
+    "test selection_is_the_model_that_actually_runs ... ignored, LIVE: spawns the real claude CLI and spends tokens",
+    "test smoke_agent_crash_recovery ... ignored, unblocks when crash_detection is wired into the stream pipeline with real AcpAgentManager",
+    "test smoke_create_team_and_verify_mcp_tools ... ignored, unblocks when TeamSessionService e2e wiring is ready (spawn + ensure_session over real DB)",
+    "test smoke_shutdown_agent_full_protocol ... ignored, unblocks when shutdown_request/approved round-trip is wired (W5-D30a/b/c/d series)",
+    "test smoke_spawn_agent_creates_real_session ... ignored, unblocks when W5-D29a-* spawn_agent lands",
+    "test s10_error_finish_sets_agent_status_to_error ... ignored, Bug: mark_idle overwrites Error status with Idle (fix pending in fix/team-communication-bugs)",
+    "test s5b_dedup_window_blocks_rapid_duplicate_finish ... ignored, Bug: on_agent_finish clears dedup window immediately, allowing double-processing within window (task #5 fix pending)",
+    "test crates/aionui-session/src/testing.rs - testing::ScriptedConnection (line 400) ... ignored"
+  ],
+  "findings": [
+    {
+      "id": "draft-retention",
+      "title": "发送未成功时清空草稿",
+      "trigger": "未配置模型、助手选择失效或创建会话返回空结果",
+      "fix": "仅在成功创建并导航后清空文字、附件与工作区",
+      "before": "新增回归修复前4项失败",
+      "after": "useGuidSend 20项通过，桌面缺模型发送验收通过"
+    },
+    {
+      "id": "comparison-history",
+      "title": "损坏的模型对比记录导致恢复白屏",
+      "trigger": "存档中存在空结果、缺失目标或错误类型",
+      "fix": "读取历史时验证嵌套结果，保留有效记录",
+      "before": "新增回归修复前2项失败",
+      "after": "历史读取与实际页面恢复回归通过"
+    },
+    {
+      "id": "project-edit-navigation",
+      "title": "跨项目导航残留编辑表单",
+      "trigger": "编辑项目A时用浏览器历史切换到B",
+      "fix": "项目身份改变时关闭编辑并重置工序和检查草稿",
+      "before": "修复前1项失败",
+      "after": "跨项目编辑回归通过"
+    },
+    {
+      "id": "rea-transfer-navigation",
+      "title": "跨拆解项目残留转生产弹窗",
+      "trigger": "打开A的转生产弹窗后切换到B",
+      "fix": "转生产组件按来源项目ID重建",
+      "before": "修复前1项失败",
+      "after": "转生产弹窗跨项目回归通过"
+    },
+    {
+      "id": "version-capacity",
+      "title": "版本已满仍启动任务",
+      "trigger": "单工序或自动流水线任一待执行工序达到100版本",
+      "fix": "执行前预检整段流程容量，保留保存时保护",
+      "before": "新增集成回归修复前失败",
+      "after": "工厂20项测试通过，含拒绝后状态不变且runner未执行"
+    },
+    {
+      "id": "assistant-configuration-error",
+      "title": "新建助手缺少运行配置时只提示失败",
+      "trigger": "省略Agent且没有启用的模型接口",
+      "fix": "将已核实的400配置错误映射为本地化操作提示，保留编辑内容",
+      "before": "真实桌面请求返回400 BAD_REQUEST，旧界面仅显示通用失败",
+      "after": "hook19项通过；真实桌面缺配置提示、保留表单、选择Agent后保存成功，助手/语言/启动专项13项通过"
+    }
+  ],
+  "status": "completed_with_documented_limits",
+  "limits": [
+    "验证平台为macOS源码构建；Windows/Linux安装包未验收。",
+    "模型对比通过真实后端连接本机SSE协议夹具；外部模型供应商、真实CLI凭据及第三方渠道账号未全量联调。",
+    "前端5项原有skip、后端53项原有ignore未执行；后端暂缓项包含CLI依赖与代码中标注的待修问题，完整名单附后。",
+    "行覆盖率55.32%，低于仓库80%目标；本轮主要用户流程通过不代表所有分支均已覆盖。",
+    "显示缩放测试与主功能测试混跑出现Electron CDP命中异常，最终按独立进程隔离执行；原生95%导航与输入及105%刷新持久化已验证。"
+  ],
+  "commands": {
+    "frontend": "cd AionUi && bun run test:coverage --maxWorkers=4",
+    "backend": "cd AionCore && cargo test --workspace",
+    "desktop": "见 AionUi/tests/e2e/README.md；显示持久化独立进程，主验收与助手补测使用隔离profile。",
+    "bench": "cd AionUi && bunx playwright test tests/e2e/features/model-bench/comparison.e2e.ts --repeat-each=2 --reporter=list"
+  },
+  "evidence_archive": {
+    "summary": "checks/verification.txt",
+    "original_logs": "验收机器上的临时日志未发布，摘要附原始日志SHA-256。",
+    "files": [
+      {
+        "check": "frontend",
+        "local_log": "/tmp/ai-factory-qa-20261101-frontend-ultimate.log",
+        "sha256": "614d45b29aa3cd1422b4cf682cb8bcc45f17bd4e730b96620ea5a3f50d619f44",
+        "bytes": 83518
+      },
+      {
+        "check": "backend",
+        "local_log": "/tmp/ai-factory-qa-20261101-backend.log",
+        "sha256": "95d567439dc4a10eea0e51a329228b3206bcdac49e549638336327b5e88f9130",
+        "bytes": 736385
+      },
+      {
+        "check": "desktopCore",
+        "local_log": "/tmp/ai-factory-qa-20261101-main-isolated-final.log",
+        "sha256": "d3ffaebeeadccc13afc435064b9d16e55b02370c95bd79f589f94bd2fea78fc9",
+        "bytes": 6208
+      },
+      {
+        "check": "display",
+        "local_log": "/tmp/ai-factory-qa-20261101-display-isolated-final.log",
+        "sha256": "1c960ae36e44cae53e4de26a53d33942b82850346b3cab513f957e0335a65db3",
+        "bytes": 1025
+      },
+      {
+        "check": "modelBench",
+        "local_log": "/tmp/ai-factory-qa-20261101-bench-native.log",
+        "sha256": "01cfd8191c599d2feefd625d3b610fa84a8d89227600ad8bb1f3ae321cc8bafc",
+        "bytes": 1792
+      },
+      {
+        "check": "supplement",
+        "local_log": "/tmp/ai-factory-qa-20261101-assistants-language-final.log",
+        "sha256": "da97c053337a162810c463c522989b53c3cea980e07f978b6e34f39b2c7a0f1f",
+        "bytes": 2932
+      },
+      {
+        "check": "static-1",
+        "local_log": "/tmp/ai-factory-qa-20261101-lint-ultimate.log",
+        "sha256": "daddabb264fdac8977730be51866a809c3f2bd4bdae53eb17038a120d51aa9cc",
+        "bytes": 116
+      },
+      {
+        "check": "static-2",
+        "local_log": "/tmp/ai-factory-qa-20261101-format-ultimate.log",
+        "sha256": "94ceb6b1d675d33200706feed0c4257fd86ef4f766184de9601b1c5a61ce143c",
+        "bytes": 133
+      },
+      {
+        "check": "static-3",
+        "local_log": "/tmp/ai-factory-qa-20261101-types-ultimate.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "check": "static-4",
+        "local_log": "/tmp/ai-factory-qa-20261101-i18n-ultimate.log",
+        "sha256": "1723cdb28265e2a106d227559a7c74698358d0e4d0ee34075d456a11fc742daa",
+        "bytes": 1892
+      }
+    ]
+  }
+}

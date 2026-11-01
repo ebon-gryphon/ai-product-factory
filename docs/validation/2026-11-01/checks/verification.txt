@@ -1,0 +1,63 @@
+AI产品加工厂 2026-11-01 验收摘要
+原始完整日志仅保留在验收机器；以下摘要及SHA-256用于追溯本次记录。
+
+frontend
+SHA-256: 614d45b29aa3cd1422b4cf682cb8bcc45f17bd4e730b96620ea5a3f50d619f44
+Local log: /tmp/ai-factory-qa-20261101-frontend-ultimate.log
+Test Files  530 passed | 1 skipped (531)
+Tests  5074 passed | 5 skipped (5079)
+=============================== Coverage summary ===============================
+Statements   : 54.48% ( 23915/43889 )
+Branches     : 49.07% ( 14467/29478 )
+Functions    : 50.53% ( 4946/9788 )
+Lines        : 55.32% ( 22154/40041 )
+
+backend
+SHA-256: 95d567439dc4a10eea0e51a329228b3206bcdac49e549638336327b5e88f9130
+Local log: /tmp/ai-factory-qa-20261101-backend.log
+targets: 255
+passed: 9423
+failed: 0
+ignored: 53
+
+desktopCore
+SHA-256: d3ffaebeeadccc13afc435064b9d16e55b02370c95bd79f589f94bd2fea78fc9
+Local log: /tmp/ai-factory-qa-20261101-main-isolated-final.log
+2 skipped
+40 passed (2.3m)
+
+display
+SHA-256: 1c960ae36e44cae53e4de26a53d33942b82850346b3cab513f957e0335a65db3
+Local log: /tmp/ai-factory-qa-20261101-display-isolated-final.log
+3 passed (18.5s)
+
+modelBench
+SHA-256: 01cfd8191c599d2feefd625d3b610fa84a8d89227600ad8bb1f3ae321cc8bafc
+Local log: /tmp/ai-factory-qa-20261101-bench-native.log
+6 passed (1.1m)
+
+supplement
+SHA-256: da97c053337a162810c463c522989b53c3cea980e07f978b6e34f39b2c7a0f1f
+Local log: /tmp/ai-factory-qa-20261101-assistants-language-final.log
+13 passed (34.2s)
+
+static-1
+SHA-256: daddabb264fdac8977730be51866a809c3f2bd4bdae53eb17038a120d51aa9cc
+Local log: /tmp/ai-factory-qa-20261101-lint-ultimate.log
+Finished in 117ms on 1577 files with 128 rules using 10 threads.
+
+static-2
+SHA-256: 94ceb6b1d675d33200706feed0c4257fd86ef4f766184de9601b1c5a61ce143c
+Local log: /tmp/ai-factory-qa-20261101-format-ultimate.log
+All matched files use the correct format.
+Finished in 3640ms on 2111 files using 10 threads.
+
+static-3
+SHA-256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+Local log: /tmp/ai-factory-qa-20261101-types-ultimate.log
+
+static-4
+SHA-256: 1723cdb28265e2a106d227559a7c74698358d0e4d0ee34075d456a11fc742daa
+Local log: /tmp/ai-factory-qa-20261101-i18n-ultimate.log
+✅ i18n validation passed
+
